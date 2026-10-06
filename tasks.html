@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>TIA পাখি — মাইক্রো টাস্ক</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --primary: #059669;
+      --primary-light: #10b981;
+      --primary-deep: #064e3b;
+      --primary-tint: #ecfdf5;
+      --primary-border: #a7f3d0;
+      --accent-red: #ef4444;
+      --bg-canvas: #f0f4f8;
+      --bg-white: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 10px 25px rgba(5, 150, 105, 0.18);
+      --shadow-float: 0 8px 24px rgba(5, 150, 105, 0.35);
+      --radius-sm: 12px;
+      --radius-md: 18px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+      --safe-bottom: env(safe-area-inset-bottom, 16px);
+      --safe-top: env(safe-area-inset-top, 0px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hind Siliguri", sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
+    body { background-color: var(--bg-canvas); color: var(--text-main); min-height: 100vh; overflow-x: hidden; padding-bottom: calc(85px + var(--safe-bottom)); padding-top: var(--safe-top); }
+    h1, h2, h3, h4 { font-weight: 800; color: var(--text-main); }
+    p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.45; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 18px; border-radius: var(--radius-md); font-weight: 700; font-size: 0.94rem; border: none; cursor: pointer; width: 100%; text-decoration: none; outline: none; transition: transform 0.2s; }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background-color: var(--primary); color: #ffffff; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3); }
+    .btn-tint { background-color: var(--primary-tint); color: var(--primary-deep); border: 1.5px solid var(--primary-border); }
+    .card { background: var(--bg-white); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow-sm); border: 1px solid rgba(226, 232, 240, 0.8); }
+    
+    .top-header { background: var(--bg-white); padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 80; }
+    .profile-meta-wrap { display: flex; align-items: center; gap: 12px; }
+    .header-avatar { width: 46px; height: 46px; border-radius: var(--radius-md); border: 2px solid var(--primary-light); padding: 2px; background: #ffffff; object-fit: cover; }
+    .profile-titles { display: flex; flex-direction: column; gap: 2px; }
+    .profile-username { font-size: 1rem; font-weight: 800; color: var(--text-main); }
+    .balance-pill-badge { display: inline-flex; align-items: center; gap: 5px; background: var(--primary-tint); color: var(--primary); padding: 2px 10px; border-radius: var(--radius-full); font-size: 0.82rem; font-weight: 800; border: 1px solid var(--primary-border); }
+    .balance-pill-badge span.usd { color: var(--text-muted); font-weight: 500; font-size: 0.74rem; }
+    .app-viewport { max-width: 480px; margin: 0 auto; padding: 16px; }
+
+    /* টাস্ক কার্ড স্টাইল */
+    .task-card-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px;
+      background: var(--bg-white);
+      border-radius: var(--radius-lg);
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    .task-card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      background: var(--primary-tint);
+      border: 1.5px solid var(--primary-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .task-card-content { flex: 1; }
+    .task-card-title { font-size: 0.96rem; font-weight: 800; color: var(--text-main); margin-bottom: 3px; }
+    .task-card-reward { font-size: 0.82rem; font-weight: 800; color: var(--primary); }
+
+    /* আপলোড বক্স স্টাইল */
+    .proof-upload-box {
+      border: 2px dashed #cbd5e1;
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+      background: #f8fafc;
+      cursor: pointer;
+      margin-bottom: 14px;
+      position: relative;
+    }
+    .proof-upload-box:hover { border-color: var(--primary); }
+    .preview-img { width: 100%; max-height: 180px; object-fit: contain; border-radius: var(--radius-sm); margin-top: 10px; display: none; }
+
+    .bottom-nav-container { position: fixed; bottom: 0; left: 0; right: 0; background: #ffffff; height: calc(66px + var(--safe-bottom)); box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06); display: flex; justify-content: space-around; align-items: center; padding-bottom: var(--safe-bottom); z-index: 100; border-top: 1px solid #e2e8f0; }
+    .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; background: none; border: none; color: var(--text-muted); font-size: 0.74rem; font-weight: 700; cursor: pointer; width: 20%; gap: 3px; text-decoration: none; }
+    .nav-btn svg { width: 24px; height: 24px; stroke: var(--text-muted); fill: none; stroke-width: 2.2; }
+    .nav-btn.active { color: var(--primary); font-weight: 800; }
+    .nav-btn.active svg { stroke: var(--primary); }
+    .center-action-btn-wrap { width: 20%; display: flex; flex-direction: column; align-items: center; position: relative; text-decoration: none; }
+    .center-circle-btn { width: 54px; height: 54px; border-radius: 50%; background: var(--primary); border: 4px solid #ffffff; box-shadow: var(--shadow-float); color: #ffffff; display: flex; align-items: center; justify-content: center; margin-top: -28px; cursor: pointer; }
+    .center-label { font-size: 0.74rem; font-weight: 800; color: var(--primary); margin-top: 2px; }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(6px); z-index: 500; display: none; align-items: flex-end; justify-content: center; }
+    .modal-overlay.active { display: flex; }
+    .modal-sheet { background: #ffffff; width: 100%; max-width: 480px; border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg); padding: 22px 20px calc(24px + var(--safe-bottom)); max-height: 88vh; overflow-y: auto; }
+    
+    #toastMessage { position: fixed; top: 18px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #ffffff; border: 1.5px solid var(--primary); box-shadow: var(--shadow-lg); padding: 12px 20px; border-radius: var(--radius-full); font-size: 0.92rem; font-weight: 800; color: var(--primary-deep); z-index: 2000; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); display: flex; align-items: center; gap: 8px; max-width: 90%; }
+    #toastMessage.show { transform: translateX(-50%) translateY(0); }
+    .spinner { width: 20px; height: 20px; border: 2.5px solid rgba(255,255,255,0.4); border-top-color: #ffffff; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div id="toastMessage">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+    <span id="toastText">নোটিফিকেশন</span>
+  </div>
+
+  <header class="top-header">
+    <div class="profile-meta-wrap">
+      <img id="userHeaderAvatar" src="https://via.placeholder.com/80?text=TIA" alt="Avatar" class="header-avatar">
+      <div class="profile-titles">
+        <span class="profile-username" id="userHeaderUsername">ব্যবহারকারী</span>
+        <div class="balance-pill-badge">
+          <span>৳</span>
+          <span id="userHeaderBalance">0.00</span>
+          <span class="usd">(<span id="userHeaderUsd">$0.00</span>)</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-viewport">
+    <div class="card" style="margin-bottom: 16px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff;">
+      <h3 style="color: #ffffff; font-size: 1.25rem;">⚡ মাইক্রো টাস্ক জোন</h3>
+      <p style="color: rgba(255, 255, 255, 0.9); font-size: 0.84rem; margin-top: 4px;">সহজ সোশ্যাল মিডিয়া কাজগুলো সম্পন্ন করে স্ক্রিনশট জমা দিন এবং জিতে নিন আকর্ষণীয় রিওয়ার্ড।</p>
+    </div>
+
+    <div>
+      <h4 style="margin-bottom: 12px; font-size: 1.05rem;">উপলব্ধ কাজের তালিকা</h4>
+      <div id="taskListContainer">
+        <div style="text-align: center; padding: 30px 10px; color: var(--text-muted);">টাস্ক লোড হচ্ছে...</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- টাস্ক ডিটেইল ও স্ক্রিনশট আপলোড পপআপ মডাল -->
+  <div class="modal-overlay" id="taskDetailModal">
+    <div class="modal-sheet">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+        <h3 id="modalTaskHeading" style="font-size: 1.15rem;">টাস্ক বিবরণ</h3>
+        <span onclick="closeTaskModal()" style="font-size: 1.4rem; font-weight: 800; cursor: pointer; color: #94a3b8;">✕</span>
+      </div>
+
+      <div style="margin-bottom: 14px; background: var(--primary-tint); border: 1px solid var(--primary-border); padding: 10px 14px; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary-deep);">পুরস্কারের পরিমাণ:</span>
+        <span id="modalTaskReward" style="font-size: 1.05rem; font-weight: 900; color: var(--primary);">+৳ 0.00</span>
+      </div>
+
+      <label style="font-size: 0.88rem; font-weight: 800; display: block; margin-bottom: 4px;">কাজের নিয়ম ও বিবরণ:</label>
+      <p id="modalTaskDesc" style="margin-bottom: 16px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: var(--radius-md); font-size: 0.86rem; color: var(--text-main); white-space: pre-line;">নির্দেশনা...</p>
+
+      <a href="#" id="modalTaskLinkBtn" target="_blank" class="btn btn-tint" style="margin-bottom: 16px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        কাজের লিংকে গিয়ে সম্পন্ন করুন
+      </a>
+
+      <label style="font-size: 0.88rem; font-weight: 800; display: block; margin-bottom: 6px;">কাজের স্ক্রিনশট প্রুফ দিন:</label>
+      
+      <div class="proof-upload-box" onclick="document.getElementById('modalTaskProofInput').click()">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="margin: 0 auto 6px; display: block;"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        <span style="font-size: 0.84rem; font-weight: 700; color: var(--text-muted);" id="uploadBoxText">স্ক্রিনশট নির্বাচন করতে এখানে চাপুন</span>
+        <input type="file" id="modalTaskProofInput" accept="image/*" style="display: none;" onchange="previewProofImage(event)">
+        <img id="imagePreviewElement" class="preview-img" alt="Preview">
+      </div>
+
+      <button id="btnSubmitProof" class="btn btn-primary" onclick="submitTaskProof()">
+        প্রমাণ জমা দিন (Submit Proof)
+      </button>
+    </div>
+  </div>
+
+  <nav class="bottom-nav-container">
+    <a href="index.html" class="nav-btn">
+      <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>হোম</span>
+    </a>
+    <a href="ads.html" class="nav-btn">
+      <svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="m11 8 5 4-5 4V8z"/></svg>
+      <span>অ্যাড</span>
+    </a>
+    <a href="tasks.html" class="center-action-btn-wrap">
+      <div class="center-circle-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>
+      </div>
+      <span class="center-label">কাজ</span>
+    </a>
+    <a href="wallet.html" class="nav-btn">
+      <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+      <span>ওয়ালেট</span>
+    </a>
+    <a href="profile.html" class="nav-btn">
+      <svg viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>প্রোফাইল</span>
+    </a>
+  </nav>
+
+  <script>
+    const IMGBB_API_KEY = "728b67da57cb2b9c5a563d5fa4ba6d10";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOhwotPMRwK19zdKX4AL7A_MTOJ45GMxQ",
+      authDomain: "tia-pakhi.firebaseapp.com",
+      projectId: "tia-pakhi",
+      storageBucket: "tia-pakhi.firebasestorage.app",
+      messagingSenderId: "593986775682",
+      appId: "1:593986775682:web:74195d484ec6e83b58e29b",
+      measurementId: "G-HSXX8MDTMV"
+    };
+
+    let db;
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+    } catch(e) { console.error(e); }
+
+    const tg = window.Telegram?.WebApp;
+    if (tg) { try { tg.ready(); tg.expand(); } catch(e){} }
+    const tgUser = tg?.initDataUnsafe?.user;
+    const userId = tgUser?.id ? String(tgUser.id) : (localStorage.getItem("tia_user_id") || "user_guest");
+
+    let currentUser = null;
+    let selectedTask = null;
+    let selectedImageFile = null;
+    let currentUsdRate = 120;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      if (db) {
+        db.collection("settings").doc("general").onSnapshot(doc => {
+          if (doc.exists && doc.data().usdRate) {
+            currentUsdRate = Number(doc.data().usdRate);
+          }
+        });
+
+        db.collection("users").doc(userId).onSnapshot(doc => {
+          if (doc.exists) {
+            currentUser = doc.data();
+            if (currentUser.isBanned) {
+              alert("আপনার অ্যাকাউন্টটি স্থগিত করা হয়েছে।");
+              return;
+            }
+            render();
+          }
+        });
+        loadTasks();
+      }
+    });
+
+    function render() {
+      if (!currentUser) return;
+      const bal = Number(currentUser.balance || 0).toFixed(2);
+      const usd = (bal / currentUsdRate).toFixed(4);
+      document.getElementById("userHeaderUsername").innerText = currentUser.username ? `@${currentUser.username}` : (currentUser.firstName || "User");
+      document.getElementById("userHeaderBalance").innerText = bal;
+      document.getElementById("userHeaderUsd").innerText = `$${usd}`;
+      if (currentUser.profilePhotoUrl) {
+        document.getElementById("userHeaderAvatar").src = currentUser.profilePhotoUrl;
+      }
+    }
+
+    async function loadTasks() {
+      const container = document.getElementById("taskListContainer");
+      if (!db) return;
+      try {
+        db.collection("tasks").where("active", "==", true).onSnapshot(snap => {
+          if (snap.empty) {
+            container.innerHTML = `<div class="card" style="text-align:center;"><p>বর্তমানে কোনো নতুন টাস্ক উপলব্ধ নেই</p></div>`;
+            return;
+          }
+          let html = "";
+          snap.forEach(d => {
+            const t = d.data();
+            const taskId = d.id;
+            html += `
+              <div class="task-card-item">
+                <div class="task-card-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <div class="task-card-content">
+                  <div class="task-card-title">${t.title}</div>
+                  <div class="task-card-reward">+৳ ${Number(t.reward || 0).toFixed(2)}</div>
+                </div>
+                <button class="btn btn-primary" style="width:auto; padding:8px 16px; font-size:0.85rem;" onclick='openTaskModal(${JSON.stringify({ ...t, id: taskId })})'>
+                  ভিউ / কাজ
+                </button>
+              </div>
+            `;
+          });
+          container.innerHTML = html;
+        });
+      } catch (e) {
+        console.error(e);
+        container.innerHTML = `<div class="card" style="text-align:center;"><p>টাস্ক লোড করতে সমস্যা হয়েছে</p></div>`;
+      }
+    }
+
+    function openTaskModal(t) {
+      selectedTask = t;
+      selectedImageFile = null;
+      document.getElementById("modalTaskHeading").innerText = t.title || "টাস্ক বিবরণ";
+      document.getElementById("modalTaskReward").innerText = `+৳ ${Number(t.reward || 0).toFixed(2)}`;
+      document.getElementById("modalTaskDesc").innerText = t.instructions || t.description || "লিংকে গিয়ে কাজটি সম্পন্ন করুন এবং স্ক্রিনশট আপলোড দিন।";
+      document.getElementById("modalTaskLinkBtn").href = t.link || "#";
+      
+      document.getElementById("modalTaskProofInput").value = "";
+      document.getElementById("imagePreviewElement").style.display = "none";
+      document.getElementById("uploadBoxText").innerText = "স্ক্রিনশট নির্বাচন করতে এখানে চাপুন";
+      
+      document.getElementById("taskDetailModal").classList.add("active");
+    }
+
+    function closeTaskModal() {
+      document.getElementById("taskDetailModal").classList.remove("active");
+    }
+
+    function previewProofImage(event) {
+      const file = event.target.files[0];
+      if (file) {
+        selectedImageFile = file;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.getElementById("imagePreviewElement");
+          img.src = e.target.result;
+          img.style.display = "block";
+          document.getElementById("uploadBoxText").innerText = "ছবি পরিবর্তন করতে চাপুন";
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    async function submitTaskProof() {
+      if (!selectedImageFile) {
+        showToast("অনুগ্রহ করে কাজের স্ক্রিনশট নির্বাচন করুন!");
+        return;
+      }
+      if (!selectedTask) return;
+
+      const btn = document.getElementById("btnSubmitProof");
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> ছবি আপলোড হচ্ছে...';
+
+      try {
+        const formData = new FormData();
+        formData.append("image", selectedImageFile);
+
+        const uploadRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+          method: "POST",
+          body: formData
+        });
+
+        const uploadData = await uploadRes.json();
+
+        if (!uploadData.success) {
+          throw new Error("ইমেজ আপলোড ব্যর্থ হয়েছে!");
+        }
+
+        const proofImageUrl = uploadData.data.url;
+
+        await db.collection("task_submissions").add({
+          taskId: selectedTask.id,
+          taskTitle: selectedTask.title,
+          reward: Number(selectedTask.reward || 0),
+          userId: userId,
+          username: currentUser?.username || "unknown",
+          userFullName: `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim(),
+          proofImageUrl: proofImageUrl,
+          status: "pending",
+          submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        showToast("টাস্ক সফলভাবে জমা হয়েছে! অ্যাডমিন যাচাই করে রিওয়ার্ড দিবে। 🎉");
+        closeTaskModal();
+      } catch (err) {
+        console.error("Submission error:", err);
+        showToast("জমা দিতে সমস্যা হয়েছে! আবার চেষ্টা করুন।");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById("toastMessage");
+      document.getElementById("toastText").innerText = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2800);
+    }
+  </script>
+</body>
+</html>

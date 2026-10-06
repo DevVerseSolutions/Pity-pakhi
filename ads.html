@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>TIA পাখি — অ্যাড</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Monetag Ad SDK -->
+  <script src="//libtl.com/sdk.js" data-zone="11841662" data-sdk="show_11841662"></script>
+
+  <!-- Gigapub Ad SDK -->
+  <script src="https://ad.gigapub.tech/script?id=8496"></script>
+
+  <!-- Adsgram Ad SDK -->
+  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --primary: #059669;
+      --primary-light: #10b981;
+      --primary-deep: #064e3b;
+      --primary-tint: #ecfdf5;
+      --primary-border: #a7f3d0;
+      --bg-canvas: #f0f4f8;
+      --bg-white: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 10px 25px rgba(5, 150, 105, 0.18);
+      --radius-sm: 12px;
+      --radius-md: 18px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+      --safe-bottom: env(safe-area-inset-bottom, 16px);
+      --safe-top: env(safe-area-inset-top, 0px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hind Siliguri", sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
+    body { background-color: var(--bg-canvas); color: var(--text-main); min-height: 100vh; overflow-x: hidden; padding-bottom: calc(85px + var(--safe-bottom)); padding-top: var(--safe-top); }
+    h1, h2, h3, h4 { font-weight: 800; color: var(--text-main); }
+    p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.45; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 18px; border-radius: var(--radius-md); font-weight: 700; font-size: 0.94rem; border: none; cursor: pointer; width: 100%; text-decoration: none; outline: none; }
+    .btn-primary { background-color: var(--primary); color: #ffffff; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3); }
+    .btn-tint { background-color: var(--primary-tint); color: var(--primary-deep); border: 1px solid var(--primary-border); }
+    .card { background: var(--bg-white); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow-sm); border: 1px solid rgba(226, 232, 240, 0.8); }
+    .top-header { background: var(--bg-white); padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 80; }
+    .profile-meta-wrap { display: flex; align-items: center; gap: 12px; }
+    .header-avatar { width: 46px; height: 46px; border-radius: var(--radius-md); border: 2px solid var(--primary-light); padding: 2px; background: #ffffff; object-fit: cover; }
+    .profile-titles { display: flex; flex-direction: column; gap: 2px; }
+    .profile-username { font-size: 1rem; font-weight: 800; color: var(--text-main); }
+    .balance-pill-badge { display: inline-flex; align-items: center; gap: 5px; background: var(--primary-tint); color: var(--primary); padding: 2px 10px; border-radius: var(--radius-full); font-size: 0.82rem; font-weight: 800; border: 1px solid var(--primary-border); }
+    .balance-pill-badge span.usd { color: var(--text-muted); font-weight: 500; font-size: 0.74rem; }
+    .app-viewport { max-width: 480px; margin: 0 auto; padding: 16px; }
+    .bottom-nav-container { position: fixed; bottom: 0; left: 0; right: 0; background: #ffffff; height: calc(66px + var(--safe-bottom)); box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06); display: flex; justify-content: space-around; align-items: center; padding-bottom: var(--safe-bottom); z-index: 100; border-top: 1px solid #e2e8f0; }
+    .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; background: none; border: none; color: var(--text-muted); font-size: 0.74rem; font-weight: 700; cursor: pointer; width: 20%; gap: 3px; text-decoration: none; }
+    .nav-btn svg { width: 24px; height: 24px; stroke: var(--text-muted); fill: none; stroke-width: 2.2; }
+    .nav-btn.active { color: var(--primary); font-weight: 800; }
+    .nav-btn.active svg { stroke: var(--primary); }
+    .center-action-btn-wrap { width: 20%; display: flex; flex-direction: column; align-items: center; position: relative; text-decoration: none; }
+    .center-circle-btn { width: 54px; height: 54px; border-radius: 50%; background: var(--primary); border: 4px solid #ffffff; color: #ffffff; display: flex; align-items: center; justify-content: center; margin-top: -28px; cursor: pointer; }
+    .center-label { font-size: 0.74rem; font-weight: 800; color: var(--text-muted); margin-top: 2px; }
+    #toastMessage { position: fixed; top: 18px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #ffffff; border: 1.5px solid var(--primary); box-shadow: var(--shadow-lg); padding: 12px 20px; border-radius: var(--radius-full); font-size: 0.92rem; font-weight: 800; color: var(--primary-deep); z-index: 2000; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); display: flex; align-items: center; gap: 8px; max-width: 90%; }
+    #toastMessage.show { transform: translateX(-50%) translateY(0); }
+    .spinner { width: 22px; height: 22px; border: 2.5px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div id="toastMessage">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+    <span id="toastText">নোটিফিকেশন</span>
+  </div>
+
+  <header class="top-header">
+    <div class="profile-meta-wrap">
+      <img id="userHeaderAvatar" src="https://via.placeholder.com/80?text=TIA" alt="Avatar" class="header-avatar">
+      <div class="profile-titles">
+        <span class="profile-username" id="userHeaderUsername">ব্যবহারকারী</span>
+        <div class="balance-pill-badge">
+          <span>৳</span>
+          <span id="userHeaderBalance">0.00</span>
+          <span class="usd">(<span id="userHeaderUsd">$0.00</span>)</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-viewport">
+    <div style="margin-bottom: 14px;">
+      <h3 style="font-size: 1.25rem;">অ্যাড নেটওয়ার্ক</h3>
+      <p style="font-size: 0.84rem;">প্রিমিয়াম অ্যাড দেখে প্রতিদিন আনলিমিটেড আয় করুন। ১০০% গ্যারান্টেড পেমেন্ট!</p>
+    </div>
+
+    <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">আজকের টার্গেট সম্পন্ন</span>
+        <h2 style="font-size: 2rem; margin-top: 2px;"><span id="adCompletedCount">0</span>/<span id="totalDailyLimit">90</span></h2>
+      </div>
+      <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--primary-tint); display: flex; align-items: center; justify-content: center;">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7"/><path d="M14 14.66V17c0 .55.45 1 1 1h2"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+      <!-- Monetag Card -->
+      <div class="card" style="padding: 16px; text-align: center;">
+        <span style="font-size: 0.68rem; font-weight: 800; background: #ecfdf5; color: var(--primary); padding: 3px 8px; border-radius: var(--radius-full); float: right;">High CPM</span>
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; margin: 16px auto 10px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#2563eb"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </div>
+        <h4 style="font-size: 0.95rem;">Monetag Ads</h4>
+        <p style="font-size: 0.78rem; margin: 4px 0 8px;">প্রতি ভিউ ৳ <span id="monetagReward">2.00</span></p>
+        <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 10px;">লিমিট: <span id="monetagAdCounter">0</span>/<span id="monetagLimit">30</span></span>
+        <button class="btn btn-primary" id="btnWatchMonetag" onclick="triggerMonetagAd()" style="padding: 9px; font-size: 0.85rem;">
+          অ্যাড দেখুন
+        </button>
+      </div>
+
+      <!-- Gigapub Ads -->
+      <div class="card" style="padding: 16px; text-align: center;">
+        <span style="font-size: 0.68rem; font-weight: 800; background: #fefce8; color: #b45309; padding: 3px 8px; border-radius: var(--radius-full); float: right;">Fast Load</span>
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: #fff7ed; display: flex; align-items: center; justify-content: center; margin: 16px auto 10px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2.5"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
+        </div>
+        <h4 style="font-size: 0.95rem;">Gigapub Ads</h4>
+        <p style="font-size: 0.78rem; margin: 4px 0 8px;">প্রতি ভিউ ৳ <span id="gigapubReward">0.60</span></p>
+        <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 10px;">লিমিট: <span id="gigapubAdCounter">0</span>/<span id="gigapubLimit">30</span></span>
+        <button class="btn btn-primary" id="btnWatchGigapub" onclick="triggerGigapubAd()" style="padding: 9px; font-size: 0.85rem;">
+          অ্যাড দেখুন
+        </button>
+      </div>
+
+      <!-- Adsgram Ads -->
+      <div class="card" style="padding: 16px; text-align: center; grid-column: span 2;">
+        <span style="font-size: 0.68rem; font-weight: 800; background: #ede9fe; color: #7c3aed; padding: 3px 8px; border-radius: var(--radius-full); float: right;">Telegram Best</span>
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: #f5f3ff; display: flex; align-items: center; justify-content: center; margin: 16px auto 10px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.2"><path d="M21.5 2 2 11.5l7 3 2 6.5 3.5-4 5.5 4 1.5-19z"/></svg>
+        </div>
+        <h4 style="font-size: 0.95rem;">Adsgram Ads</h4>
+        <p style="font-size: 0.78rem; margin: 4px 0 8px;">প্রতি ভিউ ৳ <span id="adsgramReward">1.50</span></p>
+        <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 10px;">লিমিট: <span id="adsgramAdCounter">0</span>/<span id="adsgramLimit">30</span></span>
+        <button class="btn btn-primary" id="btnWatchAdsgram" onclick="triggerAdsgramAd()" style="padding: 11px; font-size: 0.88rem; max-width: 260px; margin: 0 auto;">
+          Adsgram অ্যাড দেখুন
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav-container">
+    <a href="index.html" class="nav-btn">
+      <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>হোম</span>
+    </a>
+    <a href="ads.html" class="nav-btn active">
+      <svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="m11 8 5 4-5 4V8z"/></svg>
+      <span>অ্যাড</span>
+    </a>
+    <a href="tasks.html" class="center-action-btn-wrap">
+      <div class="center-circle-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>
+      </div>
+      <span class="center-label">কাজ</span>
+    </a>
+    <a href="wallet.html" class="nav-btn">
+      <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+      <span>ওয়ালেট</span>
+    </a>
+    <a href="profile.html" class="nav-btn">
+      <svg viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>প্রোফাইল</span>
+    </a>
+  </nav>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOhwotPMRwK19zdKX4AL7A_MTOJ45GMxQ",
+      authDomain: "tia-pakhi.firebaseapp.com",
+      projectId: "tia-pakhi",
+      storageBucket: "tia-pakhi.firebasestorage.app",
+      messagingSenderId: "593986775682",
+      appId: "1:593986775682:web:74195d484ec6e83b58e29b",
+      measurementId: "G-HSXX8MDTMV"
+    };
+
+    let db;
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+    } catch(e) { console.error(e); }
+
+    const tg = window.Telegram?.WebApp;
+    if (tg) { try { tg.ready(); tg.expand(); } catch(e){} }
+
+    const tgUser = tg?.initDataUnsafe?.user;
+    const userId = tgUser?.id ? String(tgUser.id) : (localStorage.getItem("tia_user_id") || "user_guest");
+    let currentUser = null;
+    let currentUsdRate = 120;
+
+    let APP_CONFIG = {
+      monetag: {
+        zoneId: "11841662",
+        sdkFunction: "show_11841662",
+        totalRevenuePool: 20.00,
+        userPercent: 10,
+        adminPercent: 90,
+        limit: 30
+      },
+      gigapub: {
+        id: "8496",
+        totalRevenuePool: 6.00,
+        userPercent: 10,
+        adminPercent: 90,
+        limit: 30
+      },
+      adsgram: {
+        blockId: "52019",
+        totalRevenuePool: 15.00,
+        userPercent: 10,
+        adminPercent: 90,
+        limit: 30
+      }
+    };
+
+    let adsgramController = null;
+    function initAdsgram() {
+      if (window.Adsgram) {
+        adsgramController = window.Adsgram.init({ blockId: APP_CONFIG.adsgram.blockId });
+      }
+    }
+
+    // অ্যাডমিন সেটিংস লাইভ লিসেনার
+    function listenAdSettings() {
+      if (!db) return;
+      db.collection("settings").doc("ads").onSnapshot(doc => {
+        if (doc.exists) {
+          const d = doc.data();
+          ['monetag', 'gigapub', 'adsgram'].forEach(net => {
+            if (d[net]) {
+              if (d[net].totalRevenuePool !== undefined) APP_CONFIG[net].totalRevenuePool = Number(d[net].totalRevenuePool);
+              if (d[net].userPercent !== undefined) APP_CONFIG[net].userPercent = Number(d[net].userPercent);
+              if (d[net].adminPercent !== undefined) APP_CONFIG[net].adminPercent = Number(d[net].adminPercent);
+              if (d[net].limit !== undefined) APP_CONFIG[net].limit = Number(d[net].limit);
+              if (d[net].zoneId) {
+                APP_CONFIG.monetag.zoneId = d[net].zoneId;
+                APP_CONFIG.monetag.sdkFunction = `show_${d[net].zoneId}`;
+              }
+              if (d[net].id) APP_CONFIG.gigapub.id = d[net].id;
+              if (d[net].blockId) {
+                APP_CONFIG.adsgram.blockId = d[net].blockId;
+                initAdsgram();
+              }
+            }
+          });
+          renderConfigUI();
+        }
+      });
+
+      db.collection("settings").doc("general").onSnapshot(doc => {
+        if (doc.exists && doc.data().usdRate) {
+          currentUsdRate = Number(doc.data().usdRate);
+          render();
+        }
+      });
+    }
+
+    function renderConfigUI() {
+      const monetagUserReward = (APP_CONFIG.monetag.totalRevenuePool * (APP_CONFIG.monetag.userPercent / 100));
+      const gigapubUserReward = (APP_CONFIG.gigapub.totalRevenuePool * (APP_CONFIG.gigapub.userPercent / 100));
+      const adsgramUserReward = (APP_CONFIG.adsgram.totalRevenuePool * (APP_CONFIG.adsgram.userPercent / 100));
+
+      document.getElementById("monetagReward").innerText = monetagUserReward.toFixed(2);
+      document.getElementById("monetagLimit").innerText = APP_CONFIG.monetag.limit;
+
+      document.getElementById("gigapubReward").innerText = gigapubUserReward.toFixed(2);
+      document.getElementById("gigapubLimit").innerText = APP_CONFIG.gigapub.limit;
+
+      document.getElementById("adsgramReward").innerText = adsgramUserReward.toFixed(2);
+      document.getElementById("adsgramLimit").innerText = APP_CONFIG.adsgram.limit;
+
+      const totalTarget = APP_CONFIG.monetag.limit + APP_CONFIG.gigapub.limit + APP_CONFIG.adsgram.limit;
+      document.getElementById("totalDailyLimit").innerText = totalTarget;
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      renderConfigUI();
+      initAdsgram();
+      listenAdSettings();
+
+      if (!db) return;
+      db.collection("users").doc(userId).onSnapshot(doc => {
+        if (doc.exists) {
+          currentUser = doc.data();
+          if (currentUser.isBanned) {
+            alert("আপনার অ্যাকাউন্টটি স্থগিত করা হয়েছে।");
+            return;
+          }
+          render();
+        }
+      });
+    });
+
+    function render() {
+      if (!currentUser) return;
+      const bal = Number(currentUser.balance || 0).toFixed(2);
+      const usd = (bal / currentUsdRate).toFixed(4);
+      document.getElementById("userHeaderUsername").innerText = currentUser.username ? `@${currentUser.username}` : (currentUser.firstName || "User");
+      document.getElementById("userHeaderBalance").innerText = bal;
+      document.getElementById("userHeaderUsd").innerText = `$${usd}`;
+      document.getElementById("adCompletedCount").innerText = currentUser.totalAdsWatched || 0;
+      document.getElementById("monetagAdCounter").innerText = currentUser.monetagAdsWatched || 0;
+      
+      const gWatched = document.getElementById("gigapubAdCounter");
+      if (gWatched) gWatched.innerText = currentUser.gigapubAdsWatched || 0;
+
+      const aWatched = document.getElementById("adsgramAdCounter");
+      if (aWatched) aWatched.innerText = currentUser.adsgramAdsWatched || 0;
+
+      if (currentUser.profilePhotoUrl) {
+        document.getElementById("userHeaderAvatar").src = currentUser.profilePhotoUrl;
+      }
+    }
+
+    async function processReward(adType, specificCounterField) {
+      const config = APP_CONFIG[adType];
+      const pool = Number(config.totalRevenuePool || 0);
+      const uPercent = Number(config.userPercent ?? 10);
+      const aPercent = Number(config.adminPercent ?? 90);
+
+      const userAmt = Number((pool * (uPercent / 100)).toFixed(2));
+      const adminAmt = Number((pool * (aPercent / 100)).toFixed(2));
+
+      const userRef = db.collection("users").doc(userId);
+      await db.runTransaction(async (tx) => {
+        const d = await tx.get(userRef);
+        const curBal = Number(d.data()?.balance || 0);
+        const curEarn = Number(d.data()?.totalEarned || 0);
+        const curAds = Number(d.data()?.totalAdsWatched || 0);
+        const curTypeAds = Number(d.data()?.[specificCounterField] || 0);
+
+        const updateData = {
+          balance: Number((curBal + userAmt).toFixed(2)),
+          totalEarned: Number((curEarn + userAmt).toFixed(2)),
+          totalAdsWatched: curAds + 1
+        };
+        updateData[specificCounterField] = curTypeAds + 1;
+
+        tx.update(userRef, updateData);
+
+        tx.set(db.collection("transactions").doc(), {
+          userId: userId,
+          type: adType + "_ad",
+          totalPool: pool,
+          userReward: userAmt,
+          adminShare: adminAmt,
+          userPercentage: uPercent,
+          adminPercentage: aPercent,
+          amount: userAmt,
+          description: `${adType} বিজ্ঞাপন ভিউ সম্পন্ন`,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+
+      showToast(`+৳${userAmt.toFixed(2)} ব্যালেন্সে যোগ হয়েছে!`);
+    }
+
+    async function triggerMonetagAd() {
+      const watched = Number(currentUser?.monetagAdsWatched || 0);
+      if (watched >= APP_CONFIG.monetag.limit) {
+        showToast("আজকের Monetag অ্যাড লিমিট শেষ!");
+        return;
+      }
+
+      const btn = document.getElementById("btnWatchMonetag");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> লোড হচ্ছে...';
+
+      const showAdFn = window[APP_CONFIG.monetag.sdkFunction];
+      try {
+        if (typeof showAdFn === "function") {
+          await showAdFn();
+        } else {
+          await new Promise(r => setTimeout(r, 1500));
+        }
+        await processReward("monetag", "monetagAdsWatched");
+      } catch (e) {
+        showToast("অ্যাড সম্পন্ন হয়নি");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "অ্যাড দেখুন";
+      }
+    }
+
+    async function triggerGigapubAd() {
+      const watched = Number(currentUser?.gigapubAdsWatched || 0);
+      if (watched >= APP_CONFIG.gigapub.limit) {
+        showToast("আজকের Gigapub অ্যাড লিমিট শেষ!");
+        return;
+      }
+
+      const btn = document.getElementById("btnWatchGigapub");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> লোড হচ্ছে...';
+
+      try {
+        if (window.showGiga) {
+          await window.showGiga();
+        } else if (window.gigapub) {
+          await window.gigapub.show();
+        } else {
+          await new Promise(r => setTimeout(r, 2000));
+        }
+        await processReward("gigapub", "gigapubAdsWatched");
+      } catch (e) {
+        showToast("Gigapub অ্যাড লোড করা যায়নি");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "অ্যাড দেখুন";
+      }
+    }
+
+    async function triggerAdsgramAd() {
+      const watched = Number(currentUser?.adsgramAdsWatched || 0);
+      if (watched >= APP_CONFIG.adsgram.limit) {
+        showToast("আজকের Adsgram অ্যাড লিমিট শেষ!");
+        return;
+      }
+
+      const btn = document.getElementById("btnWatchAdsgram");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> লোড হচ্ছে...';
+
+      try {
+        if (!adsgramController && window.Adsgram) {
+          initAdsgram();
+        }
+
+        if (adsgramController) {
+          const res = await adsgramController.show();
+          if (res && res.done) {
+            await processReward("adsgram", "adsgramAdsWatched");
+          } else {
+            showToast("সম্পূর্ণ বিজ্ঞাপন দেখা হয়নি");
+          }
+        } else {
+          await new Promise(r => setTimeout(r, 2000));
+          await processReward("adsgram", "adsgramAdsWatched");
+        }
+      } catch (e) {
+        showToast("অ্যাড দেখতে সমস্যা হয়েছে");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Adsgram অ্যাড দেখুন";
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById("toastMessage");
+      document.getElementById("toastText").innerText = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2800);
+    }
+  </script>
+</body>
+</html>

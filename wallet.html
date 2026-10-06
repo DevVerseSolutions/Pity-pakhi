@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>TIA পাখি — ওয়ালেট</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --primary: #059669;
+      --primary-light: #10b981;
+      --primary-bright: #00d26a;
+      --primary-deep: #064e3b;
+      --primary-tint: #ecfdf5;
+      --primary-border: #6ee7b7;
+      --primary-glow: 0 4px 18px rgba(16, 185, 129, 0.45);
+      --bg-canvas: #f0f4f8;
+      --bg-white: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.04);
+      --radius-sm: 12px;
+      --radius-md: 18px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+      --safe-bottom: env(safe-area-inset-bottom, 16px);
+      --safe-top: env(safe-area-inset-top, 0px);
+    }
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hind Siliguri", sans-serif; 
+      -webkit-tap-highlight-color: transparent; 
+      user-select: none; 
+    }
+    body { 
+      background-color: var(--bg-canvas); 
+      color: var(--text-main); 
+      min-height: 100vh; 
+      overflow-x: hidden; 
+      padding-bottom: calc(85px + var(--safe-bottom)); 
+      padding-top: var(--safe-top); 
+    }
+    h1, h2, h3, h4 { font-weight: 800; color: var(--text-main); }
+    p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.45; }
+
+    .btn { 
+      display: inline-flex; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 8px; 
+      padding: 13px 18px; 
+      border-radius: var(--radius-md); 
+      font-weight: 700; 
+      font-size: 0.94rem; 
+      border: none; 
+      cursor: pointer; 
+      width: 100%; 
+      text-decoration: none; 
+      outline: none; 
+      transition: all 0.2s ease;
+    }
+    .btn-primary { 
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+      color: #ffffff; 
+      box-shadow: var(--primary-glow); 
+    }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-tint { 
+      background-color: var(--primary-tint); 
+      color: var(--primary-deep); 
+      border: 1px solid var(--primary-border); 
+    }
+    .card { 
+      background: var(--bg-white); 
+      border-radius: var(--radius-lg); 
+      padding: 18px; 
+      margin-bottom: 14px; 
+      box-shadow: var(--shadow-sm); 
+      border: 1px solid rgba(226, 232, 240, 0.9); 
+    }
+    
+    .top-header { 
+      background: var(--bg-white); 
+      padding: 12px 18px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      border-bottom: 1px solid #e2e8f0; 
+      position: sticky; 
+      top: 0; 
+      z-index: 80; 
+    }
+    .profile-meta-wrap { display: flex; align-items: center; gap: 12px; }
+    .header-avatar { 
+      width: 46px; 
+      height: 46px; 
+      border-radius: var(--radius-md); 
+      border: 2px solid var(--primary-light); 
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); 
+      padding: 2px; 
+      background: #ffffff; 
+      object-fit: cover; 
+    }
+    .profile-titles { display: flex; flex-direction: column; gap: 2px; }
+    .profile-username { font-size: 1rem; font-weight: 800; color: var(--text-main); }
+    .balance-pill-badge { 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 5px; 
+      background: var(--primary-tint); 
+      color: var(--primary-deep); 
+      padding: 3px 12px; 
+      border-radius: var(--radius-full); 
+      font-size: 0.84rem; 
+      font-weight: 800; 
+      border: 1.5px solid var(--primary-border); 
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.2); 
+    }
+    .balance-pill-badge span.usd { color: var(--text-muted); font-weight: 500; font-size: 0.74rem; }
+    .app-viewport { max-width: 480px; margin: 0 auto; padding: 16px; }
+    
+    .referral-card {
+      background: #ffffff;
+      border: 1.5px solid rgba(16, 185, 129, 0.35);
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.12);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .progress-bar-bg {
+      width: 100%;
+      height: 9px;
+      background: #e2e8f0;
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin: 10px 0 6px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #10b981, #00d26a);
+      box-shadow: 0 0 10px rgba(0, 210, 106, 0.6);
+      border-radius: var(--radius-full);
+      transition: width 0.4s ease;
+    }
+
+    .bottom-nav-container { 
+      position: fixed; 
+      bottom: 0; 
+      left: 0; 
+      right: 0; 
+      background: #ffffff; 
+      height: calc(66px + var(--safe-bottom)); 
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06); 
+      display: flex; 
+      justify-content: space-around; 
+      align-items: center; 
+      padding-bottom: var(--safe-bottom); 
+      z-index: 100; 
+      border-top: 1px solid #e2e8f0; 
+    }
+    .nav-btn { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      background: none; 
+      border: none; 
+      color: var(--text-muted); 
+      font-size: 0.74rem; 
+      font-weight: 700; 
+      cursor: pointer; 
+      width: 20%; 
+      gap: 3px; 
+      text-decoration: none; 
+    }
+    .nav-btn svg { width: 24px; height: 24px; stroke: var(--text-muted); fill: none; stroke-width: 2.2; }
+    .nav-btn.active { color: var(--primary); font-weight: 800; }
+    .nav-btn.active svg { stroke: var(--primary); filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.5)); }
+    .center-action-btn-wrap { width: 20%; display: flex; flex-direction: column; align-items: center; position: relative; text-decoration: none; }
+    .center-circle-btn { 
+      width: 54px; 
+      height: 54px; 
+      border-radius: 50%; 
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+      border: 4px solid #ffffff; 
+      color: #ffffff; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      margin-top: -28px; 
+      cursor: pointer; 
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45); 
+    }
+    .center-label { font-size: 0.74rem; font-weight: 800; color: var(--text-muted); margin-top: 2px; }
+
+    #toastMessage { 
+      position: fixed; 
+      top: 18px; 
+      left: 50%; 
+      transform: translateX(-50%) translateY(-100px); 
+      background: #ffffff; 
+      border: 1.5px solid var(--primary-light); 
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3); 
+      padding: 12px 20px; 
+      border-radius: var(--radius-full); 
+      font-size: 0.92rem; 
+      font-weight: 800; 
+      color: var(--primary-deep); 
+      z-index: 2000; 
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+      max-width: 90%; 
+    }
+    #toastMessage.show { transform: translateX(-50%) translateY(0); }
+    .spinner { width: 20px; height: 20px; border: 2.5px solid #e2e8f0; border-top-color: #ffffff; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div id="toastMessage">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+    <span id="toastText">নোটিফিকেশন</span>
+  </div>
+
+  <header class="top-header">
+    <div class="profile-meta-wrap">
+      <img id="userHeaderAvatar" src="https://via.placeholder.com/80?text=TIA" alt="Avatar" class="header-avatar">
+      <div class="profile-titles">
+        <span class="profile-username" id="userHeaderUsername">ব্যবহারকারী</span>
+        <div class="balance-pill-badge">
+          <span>৳</span>
+          <span id="userHeaderBalance">0.00</span>
+          <span class="usd">(<span id="userHeaderUsd">$0.00</span>)</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-viewport">
+    
+    <!-- মিনি কার্ড -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+      <div class="card" style="margin: 0; text-align: center; padding: 16px;">
+        <div style="width: 38px; height: 38px; border-radius: 50%; background: var(--primary-tint); display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+        </div>
+        <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700;">মিনিমাম উইথড্র</span>
+        <h3 style="font-size: 1.25rem; margin-top: 4px; color: #059669;">৳ 50</h3>
+      </div>
+
+      <div class="card" style="margin: 0; text-align: center; padding: 16px;">
+        <div style="width: 38px; height: 38px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; box-shadow: 0 0 10px rgba(37, 99, 235, 0.2);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        </div>
+        <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700;">প্রতি রেফারে</span>
+        <h3 style="font-size: 1.25rem; margin-top: 4px; color: #2563eb;">৳ 20.00</h3>
+      </div>
+    </div>
+
+    <!-- রেফার রিকোয়ারমেন্ট কার্ড -->
+    <div class="referral-card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.86rem; font-weight: 800; color: #064e3b; display: flex; align-items: center; gap: 6px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span id="refRequirementTitle">উইথড্র শর্ত (২০টি রেফার)</span>
+        </span>
+        <span style="font-size: 0.82rem; font-weight: 800; color: #059669;" id="refCountText">০ / ২০ রেফার</span>
+      </div>
+
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="refProgressBar"></div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+        <span id="refNotice" style="color: var(--text-muted);">আর ২০টি রেফার প্রয়োজন</span>
+        <a href="tasks.html" style="color: #059669; font-weight: 800; text-decoration: none;">রেফার করুন &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Withdrawal Form -->
+    <div class="card">
+      <h4 style="margin-bottom: 12px;">পেমেন্ট মেথড নির্বাচন করুন</h4>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;">
+        <button class="btn btn-primary" id="m_bKash" onclick="selectMethod('bKash')">bKash</button>
+        <button class="btn btn-tint" id="m_Nagad" onclick="selectMethod('Nagad')">Nagad</button>
+        <button class="btn btn-tint" id="m_Binance" onclick="selectMethod('Binance')">Binance</button>
+      </div>
+
+      <label style="font-size: 0.84rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">উত্তোলনের পরিমাণ</label>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px;" id="walletAmountPills"></div>
+
+      <label style="font-size: 0.84rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;" id="walletAccLabel">অ্যাকাউন্ট নাম্বার (Personal)</label>
+      <input type="text" id="walletAccNumber" placeholder="01XXXXXXXXX" style="width: 100%; padding: 12px; border-radius: var(--radius-md); border: 1.5px solid #cbd5e1; font-size: 0.95rem; margin-bottom: 14px; outline: none; background: #ffffff;">
+
+      <div style="background: var(--bg-canvas); padding: 12px; border-radius: var(--radius-md); font-size: 0.86rem; margin-bottom: 16px; border: 1px solid #e2e8f0;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span>চার্জ (<span id="walletFeePercentLbl">10</span>%):</span>
+          <span>- ৳ <span id="walletFeeAmt">5.00</span></span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-weight: 800; color: var(--primary);">
+          <span>আপনি পাবেন:</span>
+          <span>৳ <span id="walletNetAmt">45.00</span> <span id="binanceUsdEquiv" style="display:none; font-size:0.8rem; color:#64748b;"></span></span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="btnSubmitWithdrawal" onclick="submitWithdrawal()">
+        উইথড্র রিকোয়েস্ট পাঠান
+      </button>
+    </div>
+
+    <h4 style="margin: 16px 0 10px;">উইথড্র হিস্টোরি</h4>
+    <div class="card" id="walletHistoryContainer">
+      <p style="text-align: center; padding: 12px; font-size: 0.85rem; color: var(--text-muted);">হিস্টোরি নেই</p>
+    </div>
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav-container">
+    <a href="index.html" class="nav-btn">
+      <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>হোম</span>
+    </a>
+    <a href="ads.html" class="nav-btn">
+      <svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="m11 8 5 4-5 4V8z"/></svg>
+      <span>অ্যাড</span>
+    </a>
+    <a href="tasks.html" class="center-action-btn-wrap">
+      <div class="center-circle-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>
+      </div>
+      <span class="center-label">কাজ</span>
+    </a>
+    <a href="wallet.html" class="nav-btn active">
+      <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+      <span>ওয়ালেট</span>
+    </a>
+    <a href="profile.html" class="nav-btn">
+      <svg viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>প্রোফাইল</span>
+    </a>
+  </nav>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOhwotPMRwK19zdKX4AL7A_MTOJ45GMxQ",
+      authDomain: "tia-pakhi.firebaseapp.com",
+      projectId: "tia-pakhi",
+      storageBucket: "tia-pakhi.firebasestorage.app",
+      messagingSenderId: "593986775682",
+      appId: "1:593986775682:web:74195d484ec6e83b58e29b",
+      measurementId: "G-HSXX8MDTMV"
+    };
+
+    let db;
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+    } catch(e) { console.error(e); }
+
+    const tg = window.Telegram?.WebApp;
+    if (tg) { try { tg.ready(); tg.expand(); } catch(e){} }
+    const tgUser = tg?.initDataUnsafe?.user;
+    const userId = tgUser?.id ? String(tgUser.id) : (localStorage.getItem("tia_user_id") || "user_guest");
+
+    let currentUser = null;
+    let selectedPayMethod = "bKash";
+    let selectedAmount = 50;
+    const withdrawalAmounts = [50, 100, 200, 500, 1000];
+    let feePercent = 10;
+    let MIN_REQUIRED_REFS = 20;
+    let currentUsdRate = 120;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      initPills();
+      listenGeneralSettings();
+      if (db) {
+        db.collection("users").doc(userId).onSnapshot(doc => {
+          if (doc.exists) {
+            currentUser = doc.data();
+            render();
+            updateReferralCard();
+          }
+        });
+        loadHistory();
+      }
+    });
+
+    // অ্যাডমিন সেটিংস থেকে লাইভ উইথড্র রুলস লোড
+    function listenGeneralSettings() {
+      if (!db) return;
+      db.collection("settings").doc("general").onSnapshot(doc => {
+        if (doc.exists) {
+          const g = doc.data();
+          if (g.minWithdrawRefs !== undefined) MIN_REQUIRED_REFS = Number(g.minWithdrawRefs);
+          if (g.withdrawalFeePercent !== undefined) {
+            feePercent = Number(g.withdrawalFeePercent);
+            document.getElementById("walletFeePercentLbl").innerText = feePercent;
+          }
+          if (g.usdRate !== undefined) currentUsdRate = Number(g.usdRate);
+
+          document.getElementById("refRequirementTitle").innerText = `উইথড্র শর্ত (${MIN_REQUIRED_REFS}টি রেফার)`;
+          calc();
+          updateReferralCard();
+          render();
+        }
+      });
+    }
+
+    function initPills() {
+      const wrap = document.getElementById("walletAmountPills");
+      wrap.innerHTML = "";
+      withdrawalAmounts.forEach(amt => {
+        const btn = document.createElement("button");
+        btn.className = `btn btn-tint ${amt === selectedAmount ? 'btn-primary' : ''}`;
+        btn.innerText = `৳${amt}`;
+        btn.onclick = () => {
+          selectedAmount = amt;
+          wrap.querySelectorAll("button").forEach(b => b.className = "btn btn-tint");
+          btn.className = "btn btn-primary";
+          calc();
+        };
+        wrap.appendChild(btn);
+      });
+      calc();
+    }
+
+    function selectMethod(m) {
+      selectedPayMethod = m;
+      ["bKash", "Nagad", "Binance"].forEach(id => {
+        const el = document.getElementById("m_" + id);
+        el.className = (id === m) ? "btn btn-primary" : "btn btn-tint";
+      });
+
+      const lbl = document.getElementById("walletAccLabel");
+      const inp = document.getElementById("walletAccNumber");
+      const usdEq = document.getElementById("binanceUsdEquiv");
+
+      if (m === "Binance") {
+        lbl.innerText = "বাইনান্স পে আইডি / ইউআইডি (Binance Pay ID / UID)";
+        inp.placeholder = "যেমন: 12345678 বা Pay ID";
+        usdEq.style.display = "inline";
+      } else {
+        lbl.innerText = (m === "bKash" ? "বিকাশ" : "নগদ") + " অ্যাকাউন্ট নাম্বার (Personal)";
+        inp.placeholder = "01XXXXXXXXX";
+        usdEq.style.display = "none";
+      }
+      calc();
+    }
+
+    function calc() {
+      const fee = selectedAmount * (feePercent / 100);
+      const net = selectedAmount - fee;
+      document.getElementById("walletFeeAmt").innerText = fee.toFixed(2);
+      document.getElementById("walletNetAmt").innerText = net.toFixed(2);
+
+      const usdtVal = (net / currentUsdRate).toFixed(2);
+      document.getElementById("binanceUsdEquiv").innerText = `(~ ${usdtVal} USDT)`;
+    }
+
+    function render() {
+      if (!currentUser) return;
+      const bal = Number(currentUser.balance || 0).toFixed(2);
+      const usd = (bal / currentUsdRate).toFixed(4);
+      document.getElementById("userHeaderUsername").innerText = currentUser.username ? `@${currentUser.username}` : (currentUser.firstName || "ব্যবহারকারী");
+      document.getElementById("userHeaderBalance").innerText = bal;
+      document.getElementById("userHeaderUsd").innerText = `$${usd}`;
+      if (currentUser.profilePhotoUrl) {
+        document.getElementById("userHeaderAvatar").src = currentUser.profilePhotoUrl;
+      }
+    }
+
+    function updateReferralCard() {
+      const refCount = Number(currentUser?.totalReferrals || currentUser?.referralsCount || currentUser?.referralCount || 0);
+      const percentage = Math.min(100, (refCount / MIN_REQUIRED_REFS) * 100);
+
+      document.getElementById("refCountText").innerText = `${refCount} / ${MIN_REQUIRED_REFS} রেফার`;
+      document.getElementById("refProgressBar").style.width = `${percentage}%`;
+
+      const noticeEl = document.getElementById("refNotice");
+      if (refCount >= MIN_REQUIRED_REFS) {
+        noticeEl.innerHTML = `<span style="color:#059669; font-weight:700;">✅ উইথড্র আনলক হয়েছে!</span>`;
+      } else {
+        const remaining = MIN_REQUIRED_REFS - refCount;
+        noticeEl.innerText = `আর ${remaining}টি রেফার প্রয়োজন`;
+      }
+    }
+
+    async function submitWithdrawal() {
+      const refCount = Number(currentUser?.totalReferrals || currentUser?.referralsCount || currentUser?.referralCount || 0);
+      if (refCount < MIN_REQUIRED_REFS) {
+        showToast(`উইথড্র করতে কমপক্ষে ${MIN_REQUIRED_REFS}টি রেফার লাগবে! (বাকি ${MIN_REQUIRED_REFS - refCount}টি)`);
+        return;
+      }
+
+      const num = document.getElementById("walletAccNumber").value.trim();
+
+      if (selectedPayMethod === "Binance") {
+        if (num.length < 5) {
+          showToast("সঠিক Binance Pay ID অথবা UID দিন");
+          return;
+        }
+      } else {
+        if (!/^01[3-9]\d{8}$/.test(num)) {
+          showToast("সঠিক মোবাইল নাম্বার দিন");
+          return;
+        }
+      }
+
+      if (Number(currentUser?.balance || 0) < selectedAmount) {
+        showToast("পর্যাপ্ত ব্যালেন্স নেই");
+        return;
+      }
+
+      const btn = document.getElementById("btnSubmitWithdrawal");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> সাবমিট হচ্ছে...';
+
+      try {
+        const userRef = db.collection("users").doc(userId);
+        await db.runTransaction(async (t) => {
+          const doc = await t.get(userRef);
+          const b = Number(doc.data().balance || 0);
+          if (b < selectedAmount) throw new Error("অপর্যাপ্ত ব্যালেন্স");
+
+          t.update(userRef, { balance: b - selectedAmount });
+          t.set(db.collection("withdrawals").doc(), {
+            userId: userId,
+            amount: selectedAmount,
+            method: selectedPayMethod,
+            accountNumber: num,
+            status: "pending",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        });
+        showToast("উইথড্র রিকোয়েস্ট সফলভাবে জমা হয়েছে!");
+        document.getElementById("walletAccNumber").value = "";
+        loadHistory();
+      } catch (err) {
+        showToast(err.message || "উইথড্র ব্যর্থ হয়েছে");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "উইথড্র রিকোয়েস্ট পাঠান";
+      }
+    }
+
+    async function loadHistory() {
+      const container = document.getElementById("walletHistoryContainer");
+      try {
+        const snap = await db.collection("withdrawals").where("userId", "==", userId).limit(5).get();
+        if (snap.empty) {
+          container.innerHTML = `<p style="text-align: center; padding: 12px; font-size: 0.85rem; color: var(--text-muted);">হিস্টোরি নেই</p>`;
+          return;
+        }
+        container.innerHTML = "";
+        snap.forEach(d => {
+          const w = d.data();
+          const div = document.createElement("div");
+          div.style.cssText = "display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #f1f5f9;";
+          div.innerHTML = `
+            <div>
+              <strong>${w.method} - ৳${w.amount}</strong>
+              <div style="font-size:0.75rem; color:var(--text-muted);">${w.accountNumber}</div>
+            </div>
+            <span style="font-weight:700; font-size:0.8rem; color:${w.status==='approved'?'#059669':'#d97706'}">${w.status}</span>
+          `;
+          container.appendChild(div);
+        });
+      } catch(e) {}
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById("toastMessage");
+      document.getElementById("toastText").innerText = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2800);
+    }
+  </script>
+</body>
+</html>
