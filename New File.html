@@ -1,0 +1,1704 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>TIA পাখি — অল-ইন-ওয়ান</title>
+
+  <!-- Telegram WebApp Pre-Init Hook & Error Suppressor -->
+  <script>
+    (function() {
+      // 1. Filter out the Telegram CloudStorage unsupported version message in console
+      var _origError = console.error;
+      console.error = function() {
+        if (arguments.length > 0 && typeof arguments[0] === 'string' && arguments[0].indexOf('CloudStorage is not supported in version') !== -1) {
+          return;
+        }
+        _origError.apply(console, arguments);
+      };
+
+      // 2. Set Telegram WebApp version to 8.0 before telegram-web-app.js initializes
+      try {
+        var key = '__telegram__initParams';
+        var p = {};
+        try {
+          var s = sessionStorage.getItem(key);
+          if (s) p = JSON.parse(s) || {};
+        } catch(e) {}
+        p.tgWebAppVersion = '8.0';
+        if (!p.tgWebAppPlatform) p.tgWebAppPlatform = 'android';
+        sessionStorage.setItem(key, JSON.stringify(p));
+      } catch(e) {}
+    })();
+  </script>
+
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Telegram CloudStorage & API Polyfill -->
+  <script>
+    (function() {
+      if (window.Telegram && window.Telegram.WebApp) {
+        var tg = window.Telegram.WebApp;
+
+        try { tg.isVersionAtLeast = function() { return true; }; } catch(e) {}
+        try {
+          Object.defineProperty(tg, 'version', {
+            get: function() { return '8.0'; },
+            configurable: true
+          });
+        } catch(e) { tg.version = '8.0'; }
+
+        var cs = tg.CloudStorage || {};
+        cs.setItem = function(k, v, cb) {
+          try { localStorage.setItem('tg_cs_' + k, v); if (cb) cb(null, true); }
+          catch(e) { if (cb) cb(e, false); }
+          return cs;
+        };
+        cs.getItem = function(k, cb) {
+          try { var val = localStorage.getItem('tg_cs_' + k); if (cb) cb(null, val); }
+          catch(e) { if (cb) cb(e, null); }
+          return cs;
+        };
+        cs.getItems = function(keys, cb) {
+          try {
+            var res = {};
+            if (Array.isArray(keys)) {
+              keys.forEach(function(k) { res[k] = localStorage.getItem('tg_cs_' + k); });
+            }
+            if (cb) cb(null, res);
+          } catch(e) { if (cb) cb(e, null); }
+          return cs;
+        };
+        cs.removeItem = function(k, cb) {
+          try { localStorage.removeItem('tg_cs_' + k); if (cb) cb(null, true); }
+          catch(e) { if (cb) cb(e, false); }
+          return cs;
+        };
+        cs.removeItems = function(keys, cb) {
+          try {
+            if (Array.isArray(keys)) {
+              keys.forEach(function(k) { localStorage.removeItem('tg_cs_' + k); });
+            }
+            if (cb) cb(null, true);
+          } catch(e) { if (cb) cb(e, false); }
+          return cs;
+        };
+        cs.getKeys = function(cb) {
+          try {
+            var list = [];
+            for (var i = 0; i < localStorage.length; i++) {
+              var kn = localStorage.key(i);
+              if (kn && kn.indexOf('tg_cs_') === 0) list.push(kn.replace('tg_cs_', ''));
+            }
+            if (cb) cb(null, list);
+          } catch(e) { if (cb) cb(e, null); }
+          return cs;
+        };
+
+        try {
+          Object.defineProperty(tg, 'CloudStorage', {
+            value: cs,
+            writable: true,
+            configurable: true
+          });
+        } catch(e) {
+          tg.CloudStorage = cs;
+        }
+      }
+    })();
+  </script>
+
+  <!-- Monetag Ad SDK -->
+  <script src="//libtl.com/sdk.js" data-zone="11841662" data-sdk="show_11841662"></script>
+
+  <!-- Gigapub Ad SDK -->
+  <script src="https://ad.gigapub.tech/script?id=8496"></script>
+
+  <!-- Adsgram Ad SDK -->
+  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --primary: #059669;
+      --primary-light: #10b981;
+      --primary-vibrant: #20C878;
+      --primary-bright: #00d26a;
+      --primary-deep: #064e3b;
+      --primary-tint: #ecfdf5;
+      --primary-border: #a7f3d0;
+      --accent-purple: #7c3aed;
+      --accent-red: #ef4444;
+      --accent-gold: #d97706;
+      --bg-canvas: #f0f4f8;
+      --bg-white: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 10px 25px rgba(5, 150, 105, 0.18);
+      --shadow-float: 0 8px 24px rgba(5, 150, 105, 0.35);
+      --primary-glow: 0 4px 18px rgba(16, 185, 129, 0.45);
+      --radius-sm: 12px;
+      --radius-md: 18px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+      --safe-bottom: env(safe-area-inset-bottom, 16px);
+      --safe-top: env(safe-area-inset-top, 0px);
+    }
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hind Siliguri", sans-serif; 
+      -webkit-tap-highlight-color: transparent; 
+      user-select: none; 
+    }
+    body { 
+      background-color: var(--bg-canvas); 
+      color: var(--text-main); 
+      min-height: 100vh; 
+      overflow-x: hidden; 
+      padding-bottom: calc(85px + var(--safe-bottom)); 
+      padding-top: var(--safe-top); 
+    }
+    h1, h2, h3, h4 { font-weight: 800; color: var(--text-main); }
+    p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.45; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 18px; border-radius: var(--radius-md); font-weight: 700; font-size: 0.94rem; border: none; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; text-decoration: none; outline: none; }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background-color: var(--primary); color: #ffffff; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3); }
+    .btn-white { background-color: #ffffff; color: var(--primary); box-shadow: var(--shadow-sm); }
+    .btn-dark-green { background-color: rgba(6, 78, 59, 0.65); color: #ffffff; backdrop-filter: blur(4px); }
+    .btn-tint { background-color: var(--primary-tint); color: var(--primary-deep); border: 1.5px solid var(--primary-border); }
+    
+    .card { background: var(--bg-white); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow-sm); border: 1px solid rgba(226, 232, 240, 0.8); }
+
+    /* SPA Page Visibility */
+    .page-view { display: none; }
+    .page-view.active { display: block; }
+
+    /* Top Sticky Header */
+    .top-header { background: var(--bg-white); padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 80; }
+    .profile-meta-wrap { display: flex; align-items: center; gap: 12px; }
+    .header-avatar { width: 46px; height: 46px; border-radius: var(--radius-md); border: 2px solid var(--primary-light); padding: 2px; background: #ffffff; object-fit: cover; }
+    .profile-titles { display: flex; flex-direction: column; gap: 2px; }
+    .profile-username { font-size: 1rem; font-weight: 800; color: var(--text-main); }
+    .balance-pill-badge { display: inline-flex; align-items: center; gap: 5px; background: var(--primary-tint); color: var(--primary); padding: 2px 10px; border-radius: var(--radius-full); font-size: 0.82rem; font-weight: 800; border: 1px solid var(--primary-border); }
+    .balance-pill-badge span.usd { color: var(--text-muted); font-weight: 500; font-size: 0.74rem; }
+    .header-bell-btn { width: 42px; height: 42px; border-radius: 50%; background: var(--bg-white); border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); cursor: pointer; }
+    .app-viewport { max-width: 480px; margin: 0 auto; padding: 16px; }
+
+    /* Hero balance */
+    .hero-balance-card { background: linear-gradient(135deg, #059669 0%, #047857 100%); border-radius: var(--radius-lg); padding: 22px 20px; color: #ffffff; position: relative; overflow: hidden; box-shadow: var(--shadow-lg); margin-bottom: 16px; }
+    .hero-balance-card .wallet-watermark { position: absolute; right: 18px; top: 18px; opacity: 0.25; }
+    .hero-balance-card .card-label { font-size: 0.88rem; font-weight: 600; color: rgba(255, 255, 255, 0.9); margin-bottom: 6px; }
+    .hero-balance-card .main-balance { font-size: 2.6rem; font-weight: 900; line-height: 1.1; margin-bottom: 6px; }
+    .hero-balance-card .usd-sub { font-size: 0.85rem; background: rgba(6, 78, 59, 0.5); display: inline-block; padding: 4px 12px; border-radius: var(--radius-full); font-weight: 700; margin-bottom: 20px; }
+    .hero-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* 2 Col Stats */
+    .stats-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .stat-box { background: var(--bg-white); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow-sm); border: 1px solid rgba(226, 232, 240, 0.8); display: flex; flex-direction: column; gap: 8px; }
+    .stat-box-icon { width: 40px; height: 40px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; }
+    .stat-box-icon.yellow { background: #fefce8; }
+    .stat-box .stat-label { font-size: 0.84rem; font-weight: 700; color: var(--text-muted); }
+    .stat-box .stat-value { font-size: 1.7rem; font-weight: 900; color: var(--text-main); line-height: 1; }
+
+    /* Referral link shortcut */
+    .refer-link-card { background: var(--bg-white); border-radius: var(--radius-lg); padding: 18px; box-shadow: var(--shadow-sm); border: 1px solid rgba(226, 232, 240, 0.8); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px; text-decoration: none; cursor: pointer; transition: transform 0.2s; }
+    .refer-link-card:active { transform: scale(0.98); }
+    .refer-icon-circle { width: 52px; height: 52px; border-radius: var(--radius-md); background: var(--primary-tint); border: 1.5px solid var(--primary-border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+    /* Target Rewards */
+    .target-rewards-container { background: var(--bg-white); border-radius: var(--radius-lg); padding: 20px 18px; box-shadow: var(--shadow-sm); border: 1px solid rgba(226, 232, 240, 0.8); margin-bottom: 16px; }
+    .target-rewards-header { margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
+    .target-card-box { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+    .target-card-box:last-child { margin-bottom: 0; }
+    .target-card-top { display: flex; align-items: center; justify-content: space-between; }
+    .target-info-wrap { display: flex; align-items: center; gap: 12px; }
+    .tier-badge { width: 36px; height: 36px; border-radius: 50%; font-weight: 900; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .reward-tier-amount { font-size: 1.15rem; font-weight: 900; color: var(--primary); }
+    .progress-bar-bg { width: 100%; height: 8px; background: #e2e8f0; border-radius: var(--radius-full); overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: var(--primary); width: 0%; border-radius: var(--radius-full); transition: width 0.4s ease; }
+    .target-card-bottom { display: flex; align-items: center; justify-content: space-between; }
+    .target-progress-text { font-size: 0.78rem; font-weight: 800; color: var(--text-muted); }
+    .claim-btn { padding: 7px 16px; font-size: 0.82rem; font-weight: 800; border-radius: var(--radius-full); border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 5px; transition: all 0.2s; }
+    .claim-btn.ready { background: var(--primary); color: #ffffff; box-shadow: 0 3px 10px rgba(5, 150, 105, 0.35); }
+    .claim-btn.ready:active { transform: scale(0.95); }
+    .claim-btn.locked { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+    .claim-btn.claimed { background: var(--primary-tint); color: var(--primary); border: 1px solid var(--primary-border); cursor: default; }
+
+    /* Profile Page Elements */
+    .user-card { text-align: center; padding: 22px 16px; background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%); border: 1.5px solid var(--primary-border); }
+    .user-avatar-main { width: 78px; height: 78px; border-radius: 50%; border: 3px solid var(--primary-light); box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25); margin: 0 auto 10px; object-fit: cover; background: #fff; }
+    .stat-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+    .stat-card-item { background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: var(--radius-md); padding: 12px 6px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; box-shadow: var(--shadow-sm); position: relative; overflow: hidden; }
+    .stat-card-item::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary-light), var(--primary)); }
+    .stat-title { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); }
+    .stat-value { font-size: 0.95rem; font-weight: 900; color: var(--primary-deep); letter-spacing: -0.2px; }
+    .stat-icon { font-size: 1rem; margin-bottom: 2px; }
+
+    /* Task Items & Upload Box */
+    .task-card-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; background: var(--bg-white); border-radius: var(--radius-lg); margin-bottom: 12px; box-shadow: var(--shadow-sm); border: 1px solid rgba(226, 232, 240, 0.8); }
+    .task-card-icon { width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--primary-tint); border: 1.5px solid var(--primary-border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .task-card-content { flex: 1; }
+    .task-card-title { font-size: 0.96rem; font-weight: 800; color: var(--text-main); margin-bottom: 3px; }
+    .task-card-reward { font-size: 0.82rem; font-weight: 800; color: var(--primary); }
+    .proof-upload-box { border: 2px dashed #cbd5e1; border-radius: var(--radius-md); padding: 16px; text-align: center; background: #f8fafc; cursor: pointer; margin-bottom: 14px; position: relative; }
+    .proof-upload-box:hover { border-color: var(--primary); }
+    .preview-img { width: 100%; max-height: 180px; object-fit: contain; border-radius: var(--radius-sm); margin-top: 10px; display: none; }
+
+    /* Refer History Items */
+    .history-card { background: var(--bg-white); border-radius: var(--radius-lg); padding: 18px; box-shadow: var(--shadow-sm); border: 1px solid rgba(226, 232, 240, 0.8); margin-bottom: 16px; }
+    .history-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
+    .history-count-badge { background: var(--primary-tint); color: var(--primary); font-size: 0.8rem; font-weight: 800; padding: 3px 10px; border-radius: var(--radius-full); border: 1px solid var(--primary-border); }
+    .ref-user-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); margin-bottom: 8px; }
+    .ref-user-item:last-child { margin-bottom: 0; }
+    .ref-user-left { display: flex; align-items: center; gap: 10px; }
+    .ref-user-avatar { width: 38px; height: 38px; border-radius: 50%; background: #e2e8f0; object-fit: cover; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #64748b; font-size: 0.9rem; }
+    .ref-user-name { font-size: 0.9rem; font-weight: 800; color: var(--text-main); }
+    .ref-user-date { font-size: 0.72rem; color: var(--text-muted); }
+    .ref-user-earning { font-size: 0.92rem; font-weight: 800; color: var(--primary); background: var(--primary-tint); padding: 4px 10px; border-radius: var(--radius-full); border: 1px solid var(--primary-border); }
+    .empty-state { text-align: center; padding: 24px 10px; color: var(--text-muted); font-size: 0.86rem; }
+
+    /* Wallet Specifics */
+    .referral-card { background: #ffffff; border: 1.5px solid rgba(16, 185, 129, 0.35); box-shadow: 0 4px 16px rgba(16, 185, 129, 0.12); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 14px; }
+    .wallet-progress-bar { width: 100%; height: 9px; background: #e2e8f0; border-radius: var(--radius-full); overflow: hidden; margin: 10px 0 6px; }
+    .wallet-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #00d26a); box-shadow: 0 0 10px rgba(0, 210, 106, 0.6); border-radius: var(--radius-full); transition: width 0.4s ease; }
+
+    /* Channel Join Gate Modal */
+    #joinGateModal { position: fixed; inset: 0; background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 24px; overflow-y: auto; }
+    .gate-parrot-badge { width: 105px; height: 105px; border-radius: 50%; background: #ffffff; border: 3.5px solid var(--primary-light); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 10px 25px rgba(5, 150, 105, 0.2); font-size: 55px; animation: bounceParrot 2.2s infinite ease-in-out; }
+    @keyframes bounceParrot { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    .gate-channel-card { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-radius: var(--radius-md); background: #ffffff; border: 1.5px solid var(--primary-border); text-decoration: none; box-shadow: var(--shadow-sm); transition: all 0.2s; cursor: pointer; }
+    .gate-channel-card:active { transform: scale(0.97); }
+
+    /* Bottom Nav Bar */
+    .bottom-nav-container { position: fixed; bottom: 0; left: 0; right: 0; background: #ffffff; height: calc(66px + var(--safe-bottom)); box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06); display: flex; justify-content: space-around; align-items: center; padding-bottom: var(--safe-bottom); z-index: 100; border-top: 1px solid #e2e8f0; }
+    .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; background: none; border: none; color: var(--text-muted); font-size: 0.74rem; font-weight: 700; cursor: pointer; width: 20%; gap: 3px; text-decoration: none; }
+    .nav-btn svg { width: 24px; height: 24px; stroke: var(--text-muted); fill: none; stroke-width: 2.2; }
+    .nav-btn.active { color: var(--primary); font-weight: 800; }
+    .nav-btn.active svg { stroke: var(--primary); }
+    .center-action-btn-wrap { width: 20%; display: flex; flex-direction: column; align-items: center; position: relative; text-decoration: none; }
+    .center-circle-btn { width: 54px; height: 54px; border-radius: 50%; background: var(--primary); border: 4px solid #ffffff; box-shadow: var(--shadow-float); color: #ffffff; display: flex; align-items: center; justify-content: center; margin-top: -28px; cursor: pointer; }
+    .center-label { font-size: 0.74rem; font-weight: 800; color: var(--text-muted); margin-top: 2px; }
+    .center-action-btn-wrap.active .center-label { color: var(--primary); }
+
+    /* Modals & Popups */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(6px); z-index: 500; display: none; align-items: flex-end; justify-content: center; }
+    .modal-overlay.active { display: flex; }
+    .modal-sheet { background: #ffffff; width: 100%; max-width: 480px; border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg); padding: 22px 20px calc(24px + var(--safe-bottom)); max-height: 85vh; overflow-y: auto; }
+    .rule-item { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid #f1f5f9; }
+    .rule-item:last-child { border-bottom: none; }
+    .rule-number { width: 34px; height: 34px; border-radius: var(--radius-sm); background: var(--primary); color: #ffffff; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+    #toastMessage { position: fixed; top: 18px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #ffffff; border: 1.5px solid var(--primary); box-shadow: var(--shadow-lg); padding: 12px 20px; border-radius: var(--radius-full); font-size: 0.92rem; font-weight: 800; color: var(--primary-deep); z-index: 20000; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); display: flex; align-items: center; gap: 8px; max-width: 90%; }
+    #toastMessage.show { transform: translateX(-50%) translateY(0); }
+    .spinner { width: 20px; height: 20px; border: 2.5px solid rgba(255,255,255,0.4); border-top-color: #ffffff; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toastMessage">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+    <span id="toastText">নোটিফিকেশন</span>
+  </div>
+
+  <!-- CHANNEL JOIN GATE & REGISTRATION -->
+  <section id="joinGateModal" style="display: none;">
+    <div style="text-align: center; max-width: 380px; width: 100%;">
+      <div class="gate-parrot-badge">🦜</div>
+      <h2 style="font-size: 1.5rem; margin-bottom: 6px;">TIA পাখি — তে স্বাগতম</h2>
+      <p style="font-size: 0.86rem; margin-bottom: 22px; color: var(--text-muted);">
+        অ্যাপে কাজ শুরু করার পূর্বে আমাদের অফিসিয়াল চ্যানেলগুলোতে যুক্ত থাকা বাধ্যতামূলক।
+      </p>
+      
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+        <div onclick="visitChannel(1)" id="gateChannel1Btn" class="gate-channel-card">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#0088cc"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+            <span style="font-weight: 800; font-size: 0.94rem; color: var(--text-main);">১ম অফিশিয়াল চ্যানেল</span>
+          </div>
+          <span id="gateChannel1Status" style="color: var(--primary); font-weight: 800; font-size: 0.85rem;">যুক্ত হন ➔</span>
+        </div>
+
+        <div onclick="visitChannel(2)" id="gateChannel2Btn" class="gate-channel-card">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#0088cc"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+            <span style="font-weight: 800; font-size: 0.94rem; color: var(--text-main);">২য় সাপোর্ট গ্রুপ</span>
+          </div>
+          <span id="gateChannel2Status" style="color: var(--primary); font-weight: 800; font-size: 0.85rem;">যুক্ত হন ➔</span>
+        </div>
+      </div>
+
+      <button id="btnGateVerify" class="btn btn-primary" onclick="verifyTelegramChannels()">
+        যাচাই করুন ও অ্যাপে প্রবেশ করুন
+      </button>
+    </div>
+  </section>
+
+  <!-- TOP STICKY HEADER -->
+  <header class="top-header">
+    <div class="profile-meta-wrap">
+      <img id="userHeaderAvatar" src="https://via.placeholder.com/80?text=TIA" alt="Avatar" class="header-avatar">
+      <div class="profile-titles">
+        <span class="profile-username" id="userHeaderUsername">ব্যবহারকারী</span>
+        <div class="balance-pill-badge">
+          <span>৳</span>
+          <span id="userHeaderBalance">0.00</span>
+          <span class="usd">(<span id="userHeaderUsd">$0.00</span>)</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-bell-btn" onclick="openRulesModal()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </div>
+  </header>
+
+  <!-- SPA VIEWS CONTAINER -->
+  <main class="app-viewport">
+
+    <!-- 1. HOME VIEW (index.html) -->
+    <div id="view-home" class="page-view active">
+      <div class="hero-balance-card">
+        <svg class="wallet-watermark" width="56" height="56" viewBox="0 0 24 24" fill="#ffffff"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20"/><circle cx="16" cy="15" r="1.5"/></svg>
+        <div class="card-label">আপনার মোট আয়</div>
+        <div class="main-balance">৳ <span id="homeMainBalance">0.00</span></div>
+        <div class="usd-sub">USD (<span id="homeMainUsd">$0.00</span>)</div>
+
+        <div class="hero-btn-row">
+          <button onclick="switchView('tasks')" class="btn btn-white">⚡ ইনকাম করুন</button>
+          <button onclick="switchView('wallet')" class="btn btn-dark-green">💵 টাকা তুলুন</button>
+        </div>
+      </div>
+
+      <div class="stats-2col">
+        <div class="stat-box">
+          <div class="stat-box-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+          </div>
+          <span class="stat-label">মোট রেফার</span>
+          <span class="stat-value" id="homeTotalReferrals">0</span>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-box-icon yellow">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          </div>
+          <span class="stat-label">আজকের অ্যাড ভিউ</span>
+          <span class="stat-value" id="homeTodayAds">0</span>
+        </div>
+      </div>
+
+      <div class="refer-link-card" onclick="switchView('refer')">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div class="refer-icon-circle">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div>
+            <h4 style="font-size: 1.05rem; color: var(--text-main); margin-bottom: 2px;">বন্ধুদের রেফার করুন</h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">রেফার করে আয় করুন আকর্ষণীয় বোনাস</p>
+          </div>
+        </div>
+        <div style="background: var(--primary-tint); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid var(--primary-border); flex-shrink: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+
+      <div class="target-rewards-container">
+        <div class="target-rewards-header">
+          <div>
+            <h3 style="font-size: 1.15rem; color: var(--text-main);">🎯 রেফার টার্গেট রিওয়ার্ড</h3>
+            <p style="font-size: 0.78rem; color: var(--text-muted);">টার্গেট পূরণ করলেই সাথে সাথে ব্যালেন্সে বোনাস ক্লেইম করুন</p>
+          </div>
+        </div>
+        <div id="targetCardsContainer"></div>
+      </div>
+    </div>
+
+    <!-- 2. ADS VIEW (ads.html) -->
+    <div id="view-ads" class="page-view">
+      <div style="margin-bottom: 14px;">
+        <h3 style="font-size: 1.25rem;">অ্যাড নেটওয়ার্ক</h3>
+        <p style="font-size: 0.84rem;">প্রিমিয়াম অ্যাড দেখে প্রতিদিন আনলিমিটেড আয় করুন। ১০০% গ্যারান্টেড পেমেন্ট!</p>
+      </div>
+
+      <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">আজকের টার্গেট সম্পন্ন</span>
+          <h2 style="font-size: 2rem; margin-top: 2px;"><span id="adCompletedCount">0</span>/<span id="totalDailyLimit">90</span></h2>
+        </div>
+        <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--primary-tint); display: flex; align-items: center; justify-content: center;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7"/><path d="M14 14.66V17c0 .55.45 1 1 1h2"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+        <!-- Monetag Card -->
+        <div class="card" style="padding: 16px; text-align: center;">
+          <span style="font-size: 0.68rem; font-weight: 800; background: #ecfdf5; color: var(--primary); padding: 3px 8px; border-radius: var(--radius-full); float: right;">High CPM</span>
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; margin: 16px auto 10px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#2563eb"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </div>
+          <h4 style="font-size: 0.95rem;">Monetag Ads</h4>
+          <p style="font-size: 0.78rem; margin: 4px 0 8px;">প্রতি ভিউ ৳ <span id="monetagReward">2.00</span></p>
+          <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 10px;">লিমিট: <span id="monetagAdCounter">0</span>/<span id="monetagLimit">30</span></span>
+          <button class="btn btn-primary" id="btnWatchMonetag" onclick="triggerMonetagAd()" style="padding: 9px; font-size: 0.85rem;">অ্যাড দেখুন</button>
+        </div>
+
+        <!-- Gigapub Ads -->
+        <div class="card" style="padding: 16px; text-align: center;">
+          <span style="font-size: 0.68rem; font-weight: 800; background: #fefce8; color: #b45309; padding: 3px 8px; border-radius: var(--radius-full); float: right;">Fast Load</span>
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: #fff7ed; display: flex; align-items: center; justify-content: center; margin: 16px auto 10px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2.5"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
+          </div>
+          <h4 style="font-size: 0.95rem;">Gigapub Ads</h4>
+          <p style="font-size: 0.78rem; margin: 4px 0 8px;">প্রতি ভিউ ৳ <span id="gigapubReward">0.60</span></p>
+          <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 10px;">লিমিট: <span id="gigapubAdCounter">0</span>/<span id="gigapubLimit">30</span></span>
+          <button class="btn btn-primary" id="btnWatchGigapub" onclick="triggerGigapubAd()" style="padding: 9px; font-size: 0.85rem;">অ্যাড দেখুন</button>
+        </div>
+
+        <!-- Adsgram Ads -->
+        <div class="card" style="padding: 16px; text-align: center; grid-column: span 2;">
+          <span style="font-size: 0.68rem; font-weight: 800; background: #ede9fe; color: #7c3aed; padding: 3px 8px; border-radius: var(--radius-full); float: right;">Telegram Best</span>
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: #f5f3ff; display: flex; align-items: center; justify-content: center; margin: 16px auto 10px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.2"><path d="M21.5 2 2 11.5l7 3 2 6.5 3.5-4 5.5 4 1.5-19z"/></svg>
+          </div>
+          <h4 style="font-size: 0.95rem;">Adsgram Ads</h4>
+          <p style="font-size: 0.78rem; margin: 4px 0 8px;">প্রতি ভিউ ৳ <span id="adsgramReward">1.50</span></p>
+          <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 10px;">লিমিট: <span id="adsgramAdCounter">0</span>/<span id="adsgramLimit">30</span></span>
+          <button class="btn btn-primary" id="btnWatchAdsgram" onclick="triggerAdsgramAd()" style="padding: 11px; font-size: 0.88rem; max-width: 260px; margin: 0 auto;">Adsgram অ্যাড দেখুন</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. TASKS VIEW (tasks.html) -->
+    <div id="view-tasks" class="page-view">
+      <div class="card" style="margin-bottom: 16px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff;">
+        <h3 style="color: #ffffff; font-size: 1.25rem;">⚡ মাইক্রো টাস্ক জোন</h3>
+        <p style="color: rgba(255, 255, 255, 0.9); font-size: 0.84rem; margin-top: 4px;">সহজ সোশ্যাল মিডিয়া কাজগুলো সম্পন্ন করে স্ক্রিনশট জমা দিন এবং জিতে নিন আকর্ষণীয় রিওয়ার্ড।</p>
+      </div>
+
+      <div>
+        <h4 style="margin-bottom: 12px; font-size: 1.05rem;">উপলব্ধ কাজের তালিকা</h4>
+        <div id="taskListContainer">
+          <div style="text-align: center; padding: 30px 10px; color: var(--text-muted);">টাস্ক লোড হচ্ছে...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. WALLET VIEW (wallet.html) -->
+    <div id="view-wallet" class="page-view">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+        <div class="card" style="margin: 0; text-align: center; padding: 16px;">
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: var(--primary-tint); display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700;">মিনিমাম উইথড্র</span>
+          <h3 style="font-size: 1.25rem; margin-top: 4px; color: #059669;">৳ 50</h3>
+        </div>
+
+        <div class="card" style="margin: 0; text-align: center; padding: 16px;">
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; box-shadow: 0 0 10px rgba(37, 99, 235, 0.2);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700;">প্রতি রেফারে</span>
+          <h3 style="font-size: 1.25rem; margin-top: 4px; color: #2563eb;">৳ 20.00</h3>
+        </div>
+      </div>
+
+      <!-- রেফার রিকোয়ারমেন্ট কার্ড -->
+      <div class="referral-card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.86rem; font-weight: 800; color: #064e3b; display: flex; align-items: center; gap: 6px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span id="refRequirementTitle">উইথড্র শর্ত (২০টি রেফার)</span>
+          </span>
+          <span style="font-size: 0.82rem; font-weight: 800; color: #059669;" id="refCountText">০ / ২০ রেফার</span>
+        </div>
+
+        <div class="wallet-progress-bar">
+          <div class="wallet-progress-fill" id="refProgressBar"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+          <span id="refNotice" style="color: var(--text-muted);">আর ২০টি রেফার প্রয়োজন</span>
+          <a href="javascript:void(0)" onclick="switchView('refer')" style="color: #059669; font-weight: 800; text-decoration: none;">রেফার করুন &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Withdrawal Form -->
+      <div class="card">
+        <h4 style="margin-bottom: 12px;">পেমেন্ট মেথড নির্বাচন করুন</h4>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;">
+          <button class="btn btn-primary" id="m_bKash" onclick="selectMethod('bKash')">bKash</button>
+          <button class="btn btn-tint" id="m_Nagad" onclick="selectMethod('Nagad')">Nagad</button>
+          <button class="btn btn-tint" id="m_Binance" onclick="selectMethod('Binance')">Binance</button>
+        </div>
+
+        <label style="font-size: 0.84rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">উত্তোলনের পরিমাণ</label>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px;" id="walletAmountPills"></div>
+
+        <label style="font-size: 0.84rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;" id="walletAccLabel">অ্যাকাউন্ট নাম্বার (Personal)</label>
+        <input type="text" id="walletAccNumber" placeholder="01XXXXXXXXX" style="width: 100%; padding: 12px; border-radius: var(--radius-md); border: 1.5px solid #cbd5e1; font-size: 0.95rem; margin-bottom: 14px; outline: none; background: #ffffff;">
+
+        <div style="background: var(--bg-canvas); padding: 12px; border-radius: var(--radius-md); font-size: 0.86rem; margin-bottom: 16px; border: 1px solid #e2e8f0;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span>চার্জ (<span id="walletFeePercentLbl">10</span>%):</span>
+            <span>- ৳ <span id="walletFeeAmt">5.00</span></span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-weight: 800; color: var(--primary);">
+            <span>আপনি পাবেন:</span>
+            <span>৳ <span id="walletNetAmt">45.00</span> <span id="binanceUsdEquiv" style="display:none; font-size:0.8rem; color:#64748b;"></span></span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="btnSubmitWithdrawal" onclick="submitWithdrawal()">
+          উইথড্র রিকোয়েস্ট পাঠান
+        </button>
+      </div>
+
+      <h4 style="margin: 16px 0 10px;">উইথড্র হিস্টোরি</h4>
+      <div class="card" id="walletHistoryContainer">
+        <p style="text-align: center; padding: 12px; font-size: 0.85rem; color: var(--text-muted);">হিস্টোরি নেই</p>
+      </div>
+    </div>
+
+    <!-- 5. PROFILE VIEW (profile.html) -->
+    <div id="view-profile" class="page-view">
+      <div class="card user-card">
+        <img id="userProfileAvatar" src="https://via.placeholder.com/80" alt="Avatar" class="user-avatar-main">
+        <h3 id="userProfileName">ব্যবহারকারী</h3>
+        <p id="userProfileHandle" style="font-size: 0.88rem; color: var(--primary); font-weight: 800; margin-bottom: 10px;">@username</p>
+        <span style="font-size: 0.75rem; background: var(--primary-tint); color: var(--primary-deep); border: 1px solid var(--primary-border); padding: 5px 14px; border-radius: var(--radius-full); font-weight: 800;">
+          আইডি: <span id="userProfileTgId">0000000</span>
+        </span>
+      </div>
+
+      <div class="stat-grid-3">
+        <div class="stat-card-item">
+          <span class="stat-icon">💰</span>
+          <span class="stat-title">মোট ব্যালেন্স</span>
+          <span class="stat-value" style="color: #059669;">৳ <span id="pBalance">0.00</span></span>
+        </div>
+        <div class="stat-card-item">
+          <span class="stat-icon">💵</span>
+          <span class="stat-title">টোটাল ডলার</span>
+          <span class="stat-value" id="pEarned">$0.00</span>
+        </div>
+        <div class="stat-card-item">
+          <span class="stat-icon">👥</span>
+          <span class="stat-title">টোটাল রেফার</span>
+          <span class="stat-value" id="pRefs">0</span>
+        </div>
+        <div class="stat-card-item">
+          <span class="stat-icon">🎯</span>
+          <span class="stat-title">টোটাল টাস্ক</span>
+          <span class="stat-value" id="pTasks">0</span>
+        </div>
+        <div class="stat-card-item">
+          <span class="stat-icon">💳</span>
+          <span class="stat-title">টোটাল উইথড্র</span>
+          <span class="stat-value" id="pWithdraw">৳ 0.00</span>
+        </div>
+        <div class="stat-card-item">
+          <span class="stat-icon">📺</span>
+          <span class="stat-title">টোটাল বিজ্ঞাপন</span>
+          <span class="stat-value" id="pAds">0</span>
+        </div>
+      </div>
+
+      <button class="btn btn-tint" onclick="openRulesModal()" style="margin-bottom: 12px;">
+        📖 কাজের নিয়ম ও শর্তাবলী
+      </button>
+    </div>
+
+    <!-- 6. REFER VIEW (refer.html) -->
+    <div id="view-refer" class="page-view">
+      <div class="card" style="text-align: center; padding: 22px;">
+        <h3 style="font-size: 1.3rem;">বন্ধুদের রেফার করুন</h3>
+        <p style="font-size: 0.86rem; margin: 6px 0 14px;">প্রতি সফল রেফারে ইনস্ট্যান্ট বোনাস ও ৩ স্তরের লাইফটাইম কমিশন লাভ করুন!</p>
+        
+        <input type="text" id="referralLinkInput" readonly style="width: 100%; padding: 12px; border-radius: var(--radius-md); border: 1px solid #cbd5e1; text-align: center; font-weight: 700; margin-bottom: 10px; background: var(--bg-canvas);">
+        
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-primary" onclick="copyReferral()">কপি লিংক</button>
+          <button class="btn btn-tint" onclick="shareReferral()">শেয়ার করুন</button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;">
+        <div class="card" style="text-align: center; padding: 14px 8px; margin: 0;">
+          <h4>লেভেল ১</h4>
+          <div style="font-size: 1.3rem; font-weight: 900; color: var(--primary);">8%</div>
+          <p style="font-size: 0.72rem;">ডাইরেক্ট</p>
+        </div>
+        <div class="card" style="text-align: center; padding: 14px 8px; margin: 0;">
+          <h4>লেভেল ২</h4>
+          <div style="font-size: 1.3rem; font-weight: 900; color: var(--primary);">5%</div>
+          <p style="font-size: 0.72rem;">২য় স্তর</p>
+        </div>
+        <div class="card" style="text-align: center; padding: 14px 8px; margin: 0;">
+          <h4>লেভেল ৩</h4>
+          <div style="font-size: 1.3rem; font-weight: 900; color: var(--primary);">3%</div>
+          <p style="font-size: 0.72rem;">৩য় স্তর</p>
+        </div>
+      </div>
+
+      <div class="history-card">
+        <div class="history-header">
+          <div>
+            <h3 style="font-size: 1.1rem; color: var(--text-main);">📋 আপনার রেফারেল হিস্ট্রি</h3>
+            <p style="font-size: 0.75rem; color: var(--text-muted);">যারা আপনার লিংকের মাধ্যমে একাউন্ট খুলেছে</p>
+          </div>
+          <span class="history-count-badge">মোট: <span id="refTotalCount">0</span> জন</span>
+        </div>
+
+        <div id="referralsListContainer">
+          <div class="empty-state">
+            <div style="font-size: 2.2rem; margin-bottom: 6px;">👥</div>
+            এখনও পর্যন্ত কোনো রেফারেল নেই!<br>
+            <span style="font-size: 0.78rem;">আপনার লিংক বন্ধুদের সাথে শেয়ার করুন।</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- RULES MODAL -->
+  <div class="modal-overlay" id="rulesModal">
+    <div class="modal-sheet">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3>নিয়ম ও শর্তাবলী</h3>
+        <span onclick="closeRulesModal()" style="font-size: 1.3rem; font-weight: 800; cursor: pointer; color: var(--text-muted);">✕</span>
+      </div>
+      <div class="rule-item"><div class="rule-number">1</div><div><h4>অ্যাড দেখার নিয়ম</h4><p>প্রতিটি অ্যাড সম্পূর্ণ দেখতে হবে (অন্তত ১২ সেকেন্ড)। অ্যাড স্কিপ করলে পয়েন্ট যোগ হবে না।</p></div></div>
+      <div class="rule-item"><div class="rule-number">2</div><div><h4>ভিপিএন (VPN) নিষিদ্ধ</h4><p>আমাদের অ্যাপে কাজ করার জন্য কোনো প্রকার VPN বা Proxy ব্যবহার সম্পূর্ণ নিষিদ্ধ।</p></div></div>
+      <div class="rule-item"><div class="rule-number">3</div><div><h4>একাউন্ট পলিসি</h4><p>একটি ডিভাইসে শুধুমাত্র একটি একাউন্ট তৈরি করতে পারবেন।</p></div></div>
+      <div class="rule-item"><div class="rule-number">4</div><div><h4>রেফারেল নিয়ম</h4><p>ফেক রেফার করা কঠোরভাবে নিষিদ্ধ। সঠিক রেফার করলেই রিওয়ার্ড পাবেন।</p></div></div>
+      <div class="rule-item"><div class="rule-number">5</div><div><h4>পেমেন্ট রিকোয়েস্ট</h4><p>মিনিমাম উইথড্র অ্যামাউন্ট হওয়ার পর বিকাশ, নগদ বা বাইনান্সে রিকোয়েস্ট দিতে পারবেন।</p></div></div>
+    </div>
+  </div>
+
+  <!-- TASK DETAIL & PROOF UPLOAD MODAL -->
+  <div class="modal-overlay" id="taskDetailModal">
+    <div class="modal-sheet">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+        <h3 id="modalTaskHeading" style="font-size: 1.15rem;">টাস্ক বিবরণ</h3>
+        <span onclick="closeTaskModal()" style="font-size: 1.4rem; font-weight: 800; cursor: pointer; color: #94a3b8;">✕</span>
+      </div>
+
+      <div style="margin-bottom: 14px; background: var(--primary-tint); border: 1px solid var(--primary-border); padding: 10px 14px; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary-deep);">পুরস্কারের পরিমাণ:</span>
+        <span id="modalTaskReward" style="font-size: 1.05rem; font-weight: 900; color: var(--primary);">+৳ 0.00</span>
+      </div>
+
+      <label style="font-size: 0.88rem; font-weight: 800; display: block; margin-bottom: 4px;">কাজের নিয়ম ও বিবরণ:</label>
+      <p id="modalTaskDesc" style="margin-bottom: 16px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: var(--radius-md); font-size: 0.86rem; color: var(--text-main); white-space: pre-line;">নির্দেশনা...</p>
+
+      <a href="#" id="modalTaskLinkBtn" target="_blank" class="btn btn-tint" style="margin-bottom: 16px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        কাজের লিংকে গিয়ে সম্পন্ন করুন
+      </a>
+
+      <label style="font-size: 0.88rem; font-weight: 800; display: block; margin-bottom: 6px;">কাজের স্ক্রিনশট প্রুফ দিন:</label>
+      
+      <div class="proof-upload-box" onclick="document.getElementById('modalTaskProofInput').click()">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="margin: 0 auto 6px; display: block;"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        <span style="font-size: 0.84rem; font-weight: 700; color: var(--text-muted);" id="uploadBoxText">স্ক্রিনশট নির্বাচন করতে এখানে চাপুন</span>
+        <input type="file" id="modalTaskProofInput" accept="image/*" style="display: none;" onchange="previewProofImage(event)">
+        <img id="imagePreviewElement" class="preview-img" alt="Preview">
+      </div>
+
+      <button id="btnSubmitProof" class="btn btn-primary" onclick="submitTaskProof()">
+        প্রমাণ জমা দিন (Submit Proof)
+      </button>
+    </div>
+  </div>
+
+  <!-- FIXED BOTTOM NAVIGATION BAR -->
+  <nav class="bottom-nav-container">
+    <button onclick="switchView('home')" class="nav-btn active" id="tab-home">
+      <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>হোম</span>
+    </button>
+    <button onclick="switchView('ads')" class="nav-btn" id="tab-ads">
+      <svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="m11 8 5 4-5 4V8z"/></svg>
+      <span>অ্যাড</span>
+    </button>
+    <div onclick="switchView('tasks')" class="center-action-btn-wrap" id="tab-tasks">
+      <div class="center-circle-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>
+      </div>
+      <span class="center-label">কাজ</span>
+    </div>
+    <button onclick="switchView('wallet')" class="nav-btn" id="tab-wallet">
+      <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+      <span>ওয়ালেট</span>
+    </button>
+    <button onclick="switchView('profile')" class="nav-btn" id="tab-profile">
+      <svg viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>প্রোফাইল</span>
+    </button>
+  </nav>
+
+  <!-- JAVASCRIPT LOGIC CORE -->
+  <script>
+    const IMGBB_API_KEY = "728b67da57cb2b9c5a563d5fa4ba6d10";
+    const BOT_USERNAME = "TiaPakhiEarn_Bot";
+
+    // Telegram Bot Token (এখানে আপনার Bot Token বসাতে পারেন অথবা Firebase Settings -> general -> botToken হিসেবে দিতে পারেন)
+    let BOT_TOKEN = "";
+    let channel1ChatId = "";
+    let channel2ChatId = "";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOhwotPMRwK19zdKX4AL7A_MTOJ45GMxQ",
+      authDomain: "tia-pakhi.firebaseapp.com",
+      projectId: "tia-pakhi",
+      storageBucket: "tia-pakhi.firebasestorage.app",
+      messagingSenderId: "593986775682",
+      appId: "1:593986775682:web:74195d484ec6e83b58e29b",
+      measurementId: "G-HSXX8MDTMV"
+    };
+
+    let db;
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+    } catch(e) { console.error("Firebase init error:", e); }
+
+    const tg = window.Telegram?.WebApp;
+    if (tg) { try { tg.ready(); tg.expand(); } catch(e){} }
+
+    const tgUser = tg?.initDataUnsafe?.user;
+    const userId = tgUser?.id ? String(tgUser.id) : (localStorage.getItem("tia_user_id") || "user_" + Math.floor(1000 + Math.random()*9000));
+    localStorage.setItem("tia_user_id", userId);
+
+    let currentUser = null;
+    let currentUsdRate = 120;
+    let channel1Visited = false;
+    let channel2Visited = false;
+    let channel1Url = "https://t.me/telegram";
+    let channel2Url = "https://t.me/telegram";
+
+    // Ad Config
+    let APP_CONFIG = {
+      monetag: { zoneId: "11841662", sdkFunction: "show_11841662", totalRevenuePool: 20.00, userPercent: 10, adminPercent: 90, limit: 30 },
+      gigapub: { id: "8496", totalRevenuePool: 6.00, userPercent: 10, adminPercent: 90, limit: 30 },
+      adsgram: { blockId: "52019", totalRevenuePool: 15.00, userPercent: 10, adminPercent: 90, limit: 30 }
+    };
+    let adsgramController = null;
+
+    // Target configuration
+    const TARGET_TIERS = [
+      { id: "tier_3", count: 3, bonus: 30, colorBg: "#eff6ff", colorText: "#2563eb", title: "৩ টি রেফার", sub: "টার্গেট সম্পন্ন করুন", badge: "১" },
+      { id: "tier_5", count: 5, bonus: 50, colorBg: "#fefce8", colorText: "#d97706", title: "৫ টি রেফার", sub: "টার্গেট সম্পন্ন করুন", badge: "২" },
+      { id: "tier_10", count: 10, bonus: 100, colorBg: "#ecfdf5", colorText: "#059669", title: "১০ টি রেফার", sub: "টার্গেট সম্পন্ন করুন", badge: "৩" },
+      { id: "tier_20", count: 20, bonus: 250, colorBg: "#fdf2f8", colorText: "#db2777", title: "২০ টি রেফার", sub: "মেগা রিওয়ার্ড বোনাস", badge: "৪" }
+    ];
+
+    // Tasks & Uploads
+    let selectedTask = null;
+    let selectedImageFile = null;
+
+    // Wallet State
+    let selectedPayMethod = "bKash";
+    let selectedAmount = 50;
+    const withdrawalAmounts = [50, 100, 200, 500, 1000];
+    let feePercent = 10;
+    let MIN_REQUIRED_REFS = 20;
+
+    // SPA ROUTER
+    function switchView(viewName) {
+      document.querySelectorAll(".page-view").forEach(el => el.classList.remove("active"));
+      const target = document.getElementById("view-" + viewName);
+      if (target) target.classList.add("active");
+
+      document.querySelectorAll(".nav-btn, .center-action-btn-wrap").forEach(el => el.classList.remove("active"));
+      const activeNav = document.getElementById("tab-" + viewName);
+      if (activeNav) activeNav.classList.add("active");
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      if (viewName === "refer") {
+        loadReferralHistory();
+      } else if (viewName === "tasks") {
+        loadTasks();
+      } else if (viewName === "wallet") {
+        loadHistory();
+      }
+    }
+
+    // ADSGRAM INIT
+    function initAdsgram() {
+      if (window.Adsgram) {
+        adsgramController = window.Adsgram.init({ blockId: APP_CONFIG.adsgram.blockId });
+      }
+    }
+
+    // ON DOM LOAD
+    window.addEventListener("DOMContentLoaded", async () => {
+      initPills();
+      renderConfigUI();
+      initAdsgram();
+      listenGeneralSettings();
+      listenAdSettings();
+      await checkAndInitUser();
+
+      const refInput = document.getElementById("referralLinkInput");
+      if (refInput) refInput.value = `https://t.me/${BOT_USERNAME}?start=ref_${userId}`;
+
+      // Tab / Window focus changes (ইউজার টেলিগ্রামে জয়েন করে বা বের হয়ে ফিরে আসলে লাইভ চেক)
+      document.addEventListener("visibilitychange", async () => {
+        if (document.visibilityState === "visible") {
+          const isGateVisible = document.getElementById("joinGateModal")?.style.display !== "none";
+          if (isGateVisible) {
+            await verifyUserMembership(true);
+          } else if (currentUser && BOT_TOKEN) {
+            const { allJoined } = await verifyUserMembership(true);
+            if (!allJoined) {
+              if (db) db.collection("users").doc(userId).update({ membershipVerified: false }).catch(() => {});
+              currentUser.membershipVerified = false;
+              document.getElementById("joinGateModal").style.display = "flex";
+              showToast("আপনি চ্যানেল থেকে বের হয়ে গেছেন! পুনরায় যুক্ত হওয়া বাধ্যতামূলক।");
+            }
+          }
+        }
+      });
+    });
+
+    // GENERAL SETTINGS LISTENER
+    function listenGeneralSettings() {
+      if (!db) return;
+      db.collection("settings").doc("general").onSnapshot(doc => {
+        if (doc.exists) {
+          const g = doc.data();
+          if (g.botToken) BOT_TOKEN = g.botToken;
+          if (g.channel1Url) channel1Url = g.channel1Url;
+          if (g.channel2Url) channel2Url = g.channel2Url;
+          if (g.channel1ChatId || g.channel1Id) channel1ChatId = g.channel1ChatId || g.channel1Id;
+          if (g.channel2ChatId || g.channel2Id) channel2ChatId = g.channel2ChatId || g.channel2Id;
+          if (g.usdRate) currentUsdRate = Number(g.usdRate);
+          if (g.minWithdrawRefs !== undefined) MIN_REQUIRED_REFS = Number(g.minWithdrawRefs);
+          if (g.withdrawalFeePercent !== undefined) {
+            feePercent = Number(g.withdrawalFeePercent);
+            document.getElementById("walletFeePercentLbl").innerText = feePercent;
+          }
+          const refReqTitle = document.getElementById("refRequirementTitle");
+          if (refReqTitle) refReqTitle.innerText = `উইথড্র শর্ত (${MIN_REQUIRED_REFS}টি রেফার)`;
+          calc();
+          updateReferralCard();
+          render();
+        }
+      });
+    }
+
+    // AD SETTINGS LISTENER
+    function listenAdSettings() {
+      if (!db) return;
+      db.collection("settings").doc("ads").onSnapshot(doc => {
+        if (doc.exists) {
+          const d = doc.data();
+          ['monetag', 'gigapub', 'adsgram'].forEach(net => {
+            if (d[net]) {
+              if (d[net].totalRevenuePool !== undefined) APP_CONFIG[net].totalRevenuePool = Number(d[net].totalRevenuePool);
+              if (d[net].userPercent !== undefined) APP_CONFIG[net].userPercent = Number(d[net].userPercent);
+              if (d[net].adminPercent !== undefined) APP_CONFIG[net].adminPercent = Number(d[net].adminPercent);
+              if (d[net].limit !== undefined) APP_CONFIG[net].limit = Number(d[net].limit);
+              if (d[net].zoneId) {
+                APP_CONFIG.monetag.zoneId = d[net].zoneId;
+                APP_CONFIG.monetag.sdkFunction = `show_${d[net].zoneId}`;
+              }
+              if (d[net].id) APP_CONFIG.gigapub.id = d[net].id;
+              if (d[net].blockId) {
+                APP_CONFIG.adsgram.blockId = d[net].blockId;
+                initAdsgram();
+              }
+            }
+          });
+          renderConfigUI();
+        }
+      });
+    }
+
+    function renderConfigUI() {
+      const monetagUserReward = (APP_CONFIG.monetag.totalRevenuePool * (APP_CONFIG.monetag.userPercent / 100));
+      const gigapubUserReward = (APP_CONFIG.gigapub.totalRevenuePool * (APP_CONFIG.gigapub.userPercent / 100));
+      const adsgramUserReward = (APP_CONFIG.adsgram.totalRevenuePool * (APP_CONFIG.adsgram.userPercent / 100));
+
+      document.getElementById("monetagReward").innerText = monetagUserReward.toFixed(2);
+      document.getElementById("monetagLimit").innerText = APP_CONFIG.monetag.limit;
+
+      document.getElementById("gigapubReward").innerText = gigapubUserReward.toFixed(2);
+      document.getElementById("gigapubLimit").innerText = APP_CONFIG.gigapub.limit;
+
+      document.getElementById("adsgramReward").innerText = adsgramUserReward.toFixed(2);
+      document.getElementById("adsgramLimit").innerText = APP_CONFIG.adsgram.limit;
+
+      const totalTarget = APP_CONFIG.monetag.limit + APP_CONFIG.gigapub.limit + APP_CONFIG.adsgram.limit;
+      document.getElementById("totalDailyLimit").innerText = totalTarget;
+    }
+
+    // TELEGRAM BOT API MEMBERSHIP VERIFICATION
+    function getChatTarget(customId, url) {
+      if (customId && String(customId).trim()) return String(customId).trim();
+      if (!url) return null;
+      var clean = url.trim().replace(/\/+$/, '');
+      var match = clean.match(/(?:t\.me\/|@)([a-zA-Z0-9_]{4,})/);
+      if (match && match[1] && !clean.includes('/+')) {
+        return '@' + match[1];
+      }
+      return clean.replace(/^https?:\/\/t\.me\//, '@');
+    }
+
+    async function checkUserInChat(chatTarget, tgUserId) {
+      if (!BOT_TOKEN) return true; // Bot token না থাকলে ফলব্যাক হিসেবে সত্য ধরা হবে
+      if (!chatTarget || !tgUserId) return false;
+      try {
+        const endpoint = `https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(chatTarget)}&user_id=${encodeURIComponent(tgUserId)}`;
+        const res = await fetch(endpoint);
+        const data = await res.json();
+        if (data && data.ok && data.result) {
+          const st = data.result.status;
+          if (st === 'creator' || st === 'administrator' || st === 'member') return true;
+          if (st === 'restricted' && data.result.is_member !== false) return true;
+          return false;
+        }
+        return false;
+      } catch (err) {
+        console.error("Telegram API check error:", err);
+        return false;
+      }
+    }
+
+    async function verifyUserMembership(silent = false) {
+      const target1 = channel1ChatId || getChatTarget(null, channel1Url);
+      const target2 = channel2ChatId || getChatTarget(null, channel2Url);
+
+      const isMember1 = await checkUserInChat(target1, userId);
+      const isMember2 = await checkUserInChat(target2, userId);
+
+      // UI আপডেট
+      const st1 = document.getElementById("gateChannel1Status");
+      const btn1 = document.getElementById("gateChannel1Btn");
+      if (st1 && btn1) {
+        if (isMember1) {
+          st1.innerText = "যুক্ত আছেন ✓";
+          st1.style.color = "#059669";
+          btn1.style.borderColor = "#10b981";
+        } else {
+          st1.innerText = "যুক্ত হন ➔";
+          st1.style.color = "var(--primary)";
+          btn1.style.borderColor = "var(--primary-border)";
+        }
+      }
+
+      const st2 = document.getElementById("gateChannel2Status");
+      const btn2 = document.getElementById("gateChannel2Btn");
+      if (st2 && btn2) {
+        if (isMember2) {
+          st2.innerText = "যুক্ত আছেন ✓";
+          st2.style.color = "#059669";
+          btn2.style.borderColor = "#10b981";
+        } else {
+          st2.innerText = "যুক্ত হন ➔";
+          st2.style.color = "var(--primary)";
+          btn2.style.borderColor = "var(--primary-border)";
+        }
+      }
+
+      return { isMember1, isMember2, allJoined: isMember1 && isMember2 };
+    }
+
+    // USER INIT & GATE SYSTEM
+    async function checkAndInitUser() {
+      if (!db) return;
+      const ref = db.collection("users").doc(userId);
+      const doc = await ref.get();
+      
+      if (!doc.exists) {
+        document.getElementById("joinGateModal").style.display = "flex";
+        await verifyUserMembership(true);
+      } else {
+        currentUser = doc.data();
+        if (currentUser.isBanned) {
+          document.body.innerHTML = "<h3 style='text-align:center; margin-top:40px; color:#ef4444;'>আপনার অ্যাকাউন্টটি স্থগিত (Banned) করা হয়েছে।</h3>";
+          return;
+        }
+
+        // লাইভ মেম্বারশিপ যাচাই
+        const { allJoined } = await verifyUserMembership(true);
+        if (!allJoined && BOT_TOKEN) {
+          // ইউজার চ্যানেল থেকে বের হয়ে গেলে বা জয়েন না থাকলে গেট স্ক্রিন আসবে
+          await ref.update({ membershipVerified: false }).catch(() => {});
+          currentUser.membershipVerified = false;
+          document.getElementById("joinGateModal").style.display = "flex";
+        } else {
+          // ইউজার অলরেডি চ্যানেলে যুক্ত আছে -> সরাসরি ভেতরে প্রবেশ
+          if (!currentUser.membershipVerified) {
+            await ref.update({ membershipVerified: true }).catch(() => {});
+            currentUser.membershipVerified = true;
+          }
+          document.getElementById("joinGateModal").style.display = "none";
+          render();
+        }
+      }
+
+      ref.onSnapshot(s => {
+        if (s.exists) { 
+          currentUser = s.data();
+          if (currentUser.isBanned) {
+            document.body.innerHTML = "<h3 style='text-align:center; margin-top:40px; color:#ef4444;'>আপনার অ্যাকাউন্টটি স্থগিত (Banned) করা হয়েছে।</h3>";
+            return;
+          }
+          if (currentUser.membershipVerified) {
+            document.getElementById("joinGateModal").style.display = "none";
+            render(); 
+          }
+        }
+      });
+    }
+
+    function visitChannel(channelNum) {
+      const url = channelNum === 1 ? channel1Url : channel2Url;
+      if (tg?.openTelegramLink) tg.openTelegramLink(url);
+      else window.open(url, "_blank");
+
+      if (channelNum === 1) {
+        channel1Visited = true;
+      } else {
+        channel2Visited = true;
+      }
+    }
+
+    async function verifyTelegramChannels() {
+      const btn = document.getElementById("btnGateVerify");
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> যাচাই করা হচ্ছে...';
+      btn.disabled = true;
+
+      try {
+        const { isMember1, isMember2, allJoined } = await verifyUserMembership(false);
+
+        if (BOT_TOKEN && !isMember1) {
+          showToast("আপনি এখনও ১ম অফিশিয়াল চ্যানেলে যুক্ত হননি!");
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          return;
+        }
+
+        if (BOT_TOKEN && !isMember2) {
+          showToast("আপনি এখনও ২য় সাপোর্ট গ্রুপে যুক্ত হননি!");
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          return;
+        }
+
+        if (db) {
+          const ref = db.collection("users").doc(userId);
+          const doc = await ref.get();
+
+          if (!doc.exists) {
+            currentUser = {
+              telegramUserId: userId,
+              firstName: tgUser?.first_name || "User",
+              lastName: tgUser?.last_name || "",
+              username: tgUser?.username || "tiapakhi_user",
+              profilePhotoUrl: tgUser?.photo_url || "https://via.placeholder.com/80?text=TIA",
+              balance: 0.00,
+              totalEarned: 0.00,
+              totalReferrals: 0,
+              referralsCount: 0,
+              totalAdsWatched: 0,
+              monetagAdsWatched: 0,
+              gigapubAdsWatched: 0,
+              adsgramAdsWatched: 0,
+              claimedTargets: [],
+              membershipVerified: true,
+              isBanned: false,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await ref.set(currentUser);
+          } else {
+            await ref.update({ membershipVerified: true });
+            currentUser = doc.data();
+            currentUser.membershipVerified = true;
+          }
+        }
+
+        document.getElementById("joinGateModal").style.display = "none";
+        render();
+        showToast("সফলভাবে একাউন্ট ভেরিফাই ও প্রবেশ সম্পন্ন হয়েছে! 🎉");
+      } catch (err) {
+        showToast("যাচাই করতে সমস্যা হয়েছে! আবার চেষ্টা করুন।");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+
+    // CENTRAL RENDER FUNCTION
+    function render() {
+      if (!currentUser) return;
+      const bal = Number(currentUser.balance || 0).toFixed(2);
+      const usd = (bal / currentUsdRate).toFixed(4);
+      const uname = currentUser.username ? `@${currentUser.username}` : (currentUser.firstName || "ব্যবহারকারী");
+
+      // Header
+      document.getElementById("userHeaderUsername").innerText = uname;
+      document.getElementById("userHeaderBalance").innerText = bal;
+      document.getElementById("userHeaderUsd").innerText = `$${usd}`;
+      if (currentUser.profilePhotoUrl) {
+        document.getElementById("userHeaderAvatar").src = currentUser.profilePhotoUrl;
+      }
+
+      // Home
+      document.getElementById("homeMainBalance").innerText = bal;
+      document.getElementById("homeMainUsd").innerText = `$${usd}`;
+      document.getElementById("homeTotalReferrals").innerText = currentUser.totalReferrals || currentUser.referralsCount || 0;
+      document.getElementById("homeTodayAds").innerText = currentUser.totalAdsWatched || 0;
+      renderTargetCards();
+
+      // Ads
+      document.getElementById("adCompletedCount").innerText = currentUser.totalAdsWatched || 0;
+      document.getElementById("monetagAdCounter").innerText = currentUser.monetagAdsWatched || 0;
+      document.getElementById("gigapubAdCounter").innerText = currentUser.gigapubAdsWatched || 0;
+      document.getElementById("adsgramAdCounter").innerText = currentUser.adsgramAdsWatched || 0;
+
+      // Profile
+      document.getElementById("pBalance").innerText = bal;
+      const totalEarnedTk = Number(currentUser.totalEarned || 0);
+      document.getElementById("pEarned").innerText = `$${(totalEarnedTk / currentUsdRate).toFixed(4)}`;
+      document.getElementById("pRefs").innerText = currentUser.totalReferrals || currentUser.referralsCount || 0;
+      document.getElementById("pTasks").innerText = currentUser.tasksCompleted || currentUser.totalTasks || 0;
+      document.getElementById("pWithdraw").innerText = `৳ ${(currentUser.totalWithdrawn || 0).toFixed(2)}`;
+      document.getElementById("pAds").innerText = currentUser.totalAdsWatched || 0;
+      document.getElementById("userProfileName").innerText = `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || "User";
+      document.getElementById("userProfileHandle").innerText = `@${currentUser.username || 'user'}`;
+      document.getElementById("userProfileTgId").innerText = currentUser.telegramUserId || userId;
+      if (currentUser.profilePhotoUrl) {
+        document.getElementById("userProfileAvatar").src = currentUser.profilePhotoUrl;
+      }
+
+      // Wallet
+      updateReferralCard();
+    }
+
+    // HOME REFERRAL TARGET CARDS
+    function renderTargetCards() {
+      const container = document.getElementById("targetCardsContainer");
+      if (!container) return;
+      const userRefs = Number(currentUser?.totalReferrals || currentUser?.referralsCount || 0);
+      const claimedList = currentUser?.claimedTargets || [];
+
+      let html = "";
+      TARGET_TIERS.forEach(tier => {
+        const isClaimed = claimedList.includes(tier.id);
+        const isReady = !isClaimed && (userRefs >= tier.count);
+        const progressCurrent = Math.min(userRefs, tier.count);
+        const progressPct = Math.min(100, Math.round((progressCurrent / tier.count) * 100));
+
+        let btnHtml = "";
+        if (isClaimed) {
+          btnHtml = `<button class="claim-btn claimed" disabled>✓ ক্লেইমড</button>`;
+        } else if (isReady) {
+          btnHtml = `<button class="claim-btn ready" onclick="claimTargetBonus('${tier.id}', ${tier.bonus}, ${tier.count})">৳ ক্লেইম করুন</button>`;
+        } else {
+          btnHtml = `<button class="claim-btn locked" disabled>চলমান...</button>`;
+        }
+
+        html += `
+          <div class="target-card-box">
+            <div class="target-card-top">
+              <div class="target-info-wrap">
+                <div class="tier-badge" style="background: ${tier.colorBg}; color: ${tier.colorText};">${tier.badge}</div>
+                <div>
+                  <h4 style="font-size: 0.95rem; color: var(--text-main);">${tier.title}</h4>
+                  <p style="font-size: 0.75rem; color: var(--text-muted);">${tier.sub}</p>
+                </div>
+              </div>
+              <div class="reward-tier-amount">+৳ ${tier.bonus}</div>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" style="width: ${progressPct}%;"></div>
+            </div>
+            <div class="target-card-bottom">
+              <span class="target-progress-text">অগ্রগতি: <strong style="color: var(--text-main);">${progressCurrent}/${tier.count}</strong> সম্পন্ন</span>
+              ${btnHtml}
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    async function claimTargetBonus(tierId, bonusAmount, targetCount) {
+      if (!currentUser || !db) return;
+      const userRefs = Number(currentUser.totalReferrals || currentUser.referralsCount || 0);
+      const claimedList = currentUser.claimedTargets || [];
+      if (claimedList.includes(tierId)) { showToast("আপনি ইতিমধ্যে এটি ক্লেইম করেছেন!"); return; }
+      if (userRefs < targetCount) { showToast(`টার্গেট এখনও পূরণ হয়নি (${userRefs}/${targetCount})`); return; }
+
+      try {
+        const userRef = db.collection("users").doc(userId);
+        await userRef.update({
+          balance: firebase.firestore.FieldValue.increment(bonusAmount),
+          totalEarned: firebase.firestore.FieldValue.increment(bonusAmount),
+          claimedTargets: firebase.firestore.FieldValue.arrayUnion(tierId)
+        });
+        currentUser.balance = (currentUser.balance || 0) + bonusAmount;
+        currentUser.totalEarned = (currentUser.totalEarned || 0) + bonusAmount;
+        currentUser.claimedTargets = [...claimedList, tierId];
+        render();
+        showToast(`অভিনন্দন! ৳${bonusAmount} বোনাস যোগ হয়েছে! 🎉`);
+      } catch (e) {
+        showToast("ক্লেইম করতে সমস্যা হয়েছে!");
+      }
+    }
+
+    // AD NETWORKS REWARDS PROCESS
+    async function processReward(adType, specificCounterField) {
+      const config = APP_CONFIG[adType];
+      const pool = Number(config.totalRevenuePool || 0);
+      const uPercent = Number(config.userPercent ?? 10);
+      const aPercent = Number(config.adminPercent ?? 90);
+
+      const userAmt = Number((pool * (uPercent / 100)).toFixed(2));
+      const adminAmt = Number((pool * (aPercent / 100)).toFixed(2));
+
+      const userRef = db.collection("users").doc(userId);
+      await db.runTransaction(async (tx) => {
+        const d = await tx.get(userRef);
+        const curBal = Number(d.data()?.balance || 0);
+        const curEarn = Number(d.data()?.totalEarned || 0);
+        const curAds = Number(d.data()?.totalAdsWatched || 0);
+        const curTypeAds = Number(d.data()?.[specificCounterField] || 0);
+
+        const updateData = {
+          balance: Number((curBal + userAmt).toFixed(2)),
+          totalEarned: Number((curEarn + userAmt).toFixed(2)),
+          totalAdsWatched: curAds + 1
+        };
+        updateData[specificCounterField] = curTypeAds + 1;
+        tx.update(userRef, updateData);
+
+        tx.set(db.collection("transactions").doc(), {
+          userId: userId,
+          type: adType + "_ad",
+          totalPool: pool,
+          userReward: userAmt,
+          adminShare: adminAmt,
+          userPercentage: uPercent,
+          adminPercentage: aPercent,
+          amount: userAmt,
+          description: `${adType} বিজ্ঞাপন ভিউ সম্পন্ন`,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+
+      showToast(`+৳${userAmt.toFixed(2)} ব্যালেন্সে যোগ হয়েছে!`);
+    }
+
+    async function triggerMonetagAd() {
+      const watched = Number(currentUser?.monetagAdsWatched || 0);
+      if (watched >= APP_CONFIG.monetag.limit) { showToast("আজকের Monetag অ্যাড লিমিট শেষ!"); return; }
+
+      const btn = document.getElementById("btnWatchMonetag");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> লোড হচ্ছে...';
+      const showAdFn = window[APP_CONFIG.monetag.sdkFunction];
+      try {
+        if (typeof showAdFn === "function") await showAdFn();
+        else await new Promise(r => setTimeout(r, 1500));
+        await processReward("monetag", "monetagAdsWatched");
+      } catch (e) { showToast("অ্যাড সম্পন্ন হয়নি"); }
+      finally { btn.disabled = false; btn.innerText = "অ্যাড দেখুন"; }
+    }
+
+    async function triggerGigapubAd() {
+      const watched = Number(currentUser?.gigapubAdsWatched || 0);
+      if (watched >= APP_CONFIG.gigapub.limit) { showToast("আজকের Gigapub অ্যাড লিমিট শেষ!"); return; }
+
+      const btn = document.getElementById("btnWatchGigapub");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> লোড হচ্ছে...';
+      try {
+        if (window.showGiga) await window.showGiga();
+        else if (window.gigapub) await window.gigapub.show();
+        else await new Promise(r => setTimeout(r, 2000));
+        await processReward("gigapub", "gigapubAdsWatched");
+      } catch (e) { showToast("Gigapub অ্যাড লোড করা যায়নি"); }
+      finally { btn.disabled = false; btn.innerText = "অ্যাড দেখুন"; }
+    }
+
+    async function triggerAdsgramAd() {
+      const watched = Number(currentUser?.adsgramAdsWatched || 0);
+      if (watched >= APP_CONFIG.adsgram.limit) { showToast("আজকের Adsgram অ্যাড লিমিট শেষ!"); return; }
+
+      const btn = document.getElementById("btnWatchAdsgram");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> লোড হচ্ছে...';
+      try {
+        if (!adsgramController && window.Adsgram) initAdsgram();
+        if (adsgramController) {
+          const res = await adsgramController.show();
+          if (res && res.done) await processReward("adsgram", "adsgramAdsWatched");
+          else showToast("সম্পূর্ণ বিজ্ঞাপন দেখা হয়নি");
+        } else {
+          await new Promise(r => setTimeout(r, 2000));
+          await processReward("adsgram", "adsgramAdsWatched");
+        }
+      } catch (e) { showToast("অ্যাড দেখতে সমস্যা হয়েছে"); }
+      finally { btn.disabled = false; btn.innerText = "Adsgram অ্যাড দেখুন"; }
+    }
+
+    // TASKS SYSTEM
+    async function loadTasks() {
+      const container = document.getElementById("taskListContainer");
+      if (!db || !container) return;
+      try {
+        db.collection("tasks").where("active", "==", true).onSnapshot(snap => {
+          if (snap.empty) {
+            container.innerHTML = `<div class="card" style="text-align:center;"><p>বর্তমানে কোনো নতুন টাস্ক উপলব্ধ নেই</p></div>`;
+            return;
+          }
+          let html = "";
+          snap.forEach(d => {
+            const t = d.data();
+            const taskId = d.id;
+            html += `
+              <div class="task-card-item">
+                <div class="task-card-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <div class="task-card-content">
+                  <div class="task-card-title">${t.title}</div>
+                  <div class="task-card-reward">+৳ ${Number(t.reward || 0).toFixed(2)}</div>
+                </div>
+                <button class="btn btn-primary" style="width:auto; padding:8px 16px; font-size:0.85rem;" onclick='openTaskModal(${JSON.stringify({ ...t, id: taskId })})'>
+                  ভিউ / কাজ
+                </button>
+              </div>
+            `;
+          });
+          container.innerHTML = html;
+        });
+      } catch (e) {
+        container.innerHTML = `<div class="card" style="text-align:center;"><p>টাস্ক লোড করতে সমস্যা হয়েছে</p></div>`;
+      }
+    }
+
+    function openTaskModal(t) {
+      selectedTask = t;
+      selectedImageFile = null;
+      document.getElementById("modalTaskHeading").innerText = t.title || "টাস্ক বিবরণ";
+      document.getElementById("modalTaskReward").innerText = `+৳ ${Number(t.reward || 0).toFixed(2)}`;
+      document.getElementById("modalTaskDesc").innerText = t.instructions || t.description || "লিংকে গিয়ে কাজটি সম্পন্ন করুন এবং স্ক্রিনশট আপলোড দিন।";
+      document.getElementById("modalTaskLinkBtn").href = t.link || "#";
+      document.getElementById("modalTaskProofInput").value = "";
+      document.getElementById("imagePreviewElement").style.display = "none";
+      document.getElementById("uploadBoxText").innerText = "স্ক্রিনশট নির্বাচন করতে এখানে চাপুন";
+      document.getElementById("taskDetailModal").classList.add("active");
+    }
+
+    function closeTaskModal() {
+      document.getElementById("taskDetailModal").classList.remove("active");
+    }
+
+    function previewProofImage(event) {
+      const file = event.target.files[0];
+      if (file) {
+        selectedImageFile = file;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.getElementById("imagePreviewElement");
+          img.src = e.target.result;
+          img.style.display = "block";
+          document.getElementById("uploadBoxText").innerText = "ছবি পরিবর্তন করতে চাপুন";
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    async function submitTaskProof() {
+      if (!selectedImageFile) { showToast("অনুগ্রহ করে কাজের স্ক্রিনশট নির্বাচন করুন!"); return; }
+      if (!selectedTask) return;
+
+      const btn = document.getElementById("btnSubmitProof");
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> ছবি আপলোড হচ্ছে...';
+
+      try {
+        const formData = new FormData();
+        formData.append("image", selectedImageFile);
+
+        const uploadRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success) throw new Error("ইমেজ আপলোড ব্যর্থ হয়েছে!");
+
+        await db.collection("task_submissions").add({
+          taskId: selectedTask.id,
+          taskTitle: selectedTask.title,
+          reward: Number(selectedTask.reward || 0),
+          userId: userId,
+          username: currentUser?.username || "unknown",
+          userFullName: `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim(),
+          proofImageUrl: uploadData.data.url,
+          status: "pending",
+          submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        showToast("টাস্ক সফলভাবে জমা হয়েছে! অ্যাডমিন যাচাই করে রিওয়ার্ড দিবে। 🎉");
+        closeTaskModal();
+      } catch (err) {
+        showToast("জমা দিতে সমস্যা হয়েছে! আবার চেষ্টা করুন।");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+
+    // WALLET FUNCTIONS
+    function initPills() {
+      const wrap = document.getElementById("walletAmountPills");
+      if (!wrap) return;
+      wrap.innerHTML = "";
+      withdrawalAmounts.forEach(amt => {
+        const btn = document.createElement("button");
+        btn.className = `btn btn-tint ${amt === selectedAmount ? 'btn-primary' : ''}`;
+        btn.innerText = `৳${amt}`;
+        btn.onclick = () => {
+          selectedAmount = amt;
+          wrap.querySelectorAll("button").forEach(b => b.className = "btn btn-tint");
+          btn.className = "btn btn-primary";
+          calc();
+        };
+        wrap.appendChild(btn);
+      });
+      calc();
+    }
+
+    function selectMethod(m) {
+      selectedPayMethod = m;
+      ["bKash", "Nagad", "Binance"].forEach(id => {
+        const el = document.getElementById("m_" + id);
+        if (el) el.className = (id === m) ? "btn btn-primary" : "btn btn-tint";
+      });
+
+      const lbl = document.getElementById("walletAccLabel");
+      const inp = document.getElementById("walletAccNumber");
+      const usdEq = document.getElementById("binanceUsdEquiv");
+
+      if (m === "Binance") {
+        lbl.innerText = "বাইনান্স পে আইডি / ইউআইডি (Binance Pay ID / UID)";
+        inp.placeholder = "যেমন: 12345678 বা Pay ID";
+        usdEq.style.display = "inline";
+      } else {
+        lbl.innerText = (m === "bKash" ? "বিকাশ" : "নগদ") + " অ্যাকাউন্ট নাম্বার (Personal)";
+        inp.placeholder = "01XXXXXXXXX";
+        usdEq.style.display = "none";
+      }
+      calc();
+    }
+
+    function calc() {
+      const fee = selectedAmount * (feePercent / 100);
+      const net = selectedAmount - fee;
+      const feeAmtEl = document.getElementById("walletFeeAmt");
+      const netAmtEl = document.getElementById("walletNetAmt");
+      if (feeAmtEl) feeAmtEl.innerText = fee.toFixed(2);
+      if (netAmtEl) netAmtEl.innerText = net.toFixed(2);
+
+      const usdtVal = (net / currentUsdRate).toFixed(2);
+      const binanceUsdEl = document.getElementById("binanceUsdEquiv");
+      if (binanceUsdEl) binanceUsdEl.innerText = `(~ ${usdtVal} USDT)`;
+    }
+
+    function updateReferralCard() {
+      const refCount = Number(currentUser?.totalReferrals || currentUser?.referralsCount || currentUser?.referralCount || 0);
+      const percentage = Math.min(100, (refCount / MIN_REQUIRED_REFS) * 100);
+
+      const countText = document.getElementById("refCountText");
+      const progBar = document.getElementById("refProgressBar");
+      const noticeEl = document.getElementById("refNotice");
+
+      if (countText) countText.innerText = `${refCount} / ${MIN_REQUIRED_REFS} রেফার`;
+      if (progBar) progBar.style.width = `${percentage}%`;
+
+      if (noticeEl) {
+        if (refCount >= MIN_REQUIRED_REFS) {
+          noticeEl.innerHTML = `<span style="color:#059669; font-weight:700;">✅ উইথড্র আনলক হয়েছে!</span>`;
+        } else {
+          noticeEl.innerText = `আর ${MIN_REQUIRED_REFS - refCount}টি রেফার প্রয়োজন`;
+        }
+      }
+    }
+
+    async function submitWithdrawal() {
+      const refCount = Number(currentUser?.totalReferrals || currentUser?.referralsCount || currentUser?.referralCount || 0);
+      if (refCount < MIN_REQUIRED_REFS) {
+        showToast(`উইথড্র করতে কমপক্ষে ${MIN_REQUIRED_REFS}টি রেফার লাগবে! (বাকি ${MIN_REQUIRED_REFS - refCount}টি)`);
+        return;
+      }
+
+      const num = document.getElementById("walletAccNumber").value.trim();
+      if (selectedPayMethod === "Binance") {
+        if (num.length < 5) { showToast("সঠিক Binance Pay ID অথবা UID দিন"); return; }
+      } else {
+        if (!/^01[3-9]\d{8}$/.test(num)) { showToast("সঠিক মোবাইল নাম্বার দিন"); return; }
+      }
+
+      if (Number(currentUser?.balance || 0) < selectedAmount) {
+        showToast("পর্যাপ্ত ব্যালেন্স নেই");
+        return;
+      }
+
+      const btn = document.getElementById("btnSubmitWithdrawal");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> সাবমিট হচ্ছে...';
+
+      try {
+        const userRef = db.collection("users").doc(userId);
+        await db.runTransaction(async (t) => {
+          const doc = await t.get(userRef);
+          const b = Number(doc.data().balance || 0);
+          if (b < selectedAmount) throw new Error("অপর্যাপ্ত ব্যালেন্স");
+
+          t.update(userRef, { balance: b - selectedAmount });
+          t.set(db.collection("withdrawals").doc(), {
+            userId: userId,
+            amount: selectedAmount,
+            method: selectedPayMethod,
+            accountNumber: num,
+            status: "pending",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        });
+        showToast("উইথড্র রিকোয়েস্ট সফলভাবে জমা হয়েছে!");
+        document.getElementById("walletAccNumber").value = "";
+        loadHistory();
+      } catch (err) {
+        showToast(err.message || "উইথড্র ব্যর্থ হয়েছে");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "উইথড্র রিকোয়েস্ট পাঠান";
+      }
+    }
+
+    async function loadHistory() {
+      const container = document.getElementById("walletHistoryContainer");
+      if (!db || !container) return;
+      try {
+        const snap = await db.collection("withdrawals").where("userId", "==", userId).limit(5).get();
+        if (snap.empty) {
+          container.innerHTML = `<p style="text-align: center; padding: 12px; font-size: 0.85rem; color: var(--text-muted);">হিস্টোরি নেই</p>`;
+          return;
+        }
+        container.innerHTML = "";
+        snap.forEach(d => {
+          const w = d.data();
+          const div = document.createElement("div");
+          div.style.cssText = "display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #f1f5f9;";
+          div.innerHTML = `
+            <div>
+              <strong>${w.method} - ৳${w.amount}</strong>
+              <div style="font-size:0.75rem; color:var(--text-muted);">${w.accountNumber}</div>
+            </div>
+            <span style="font-weight:700; font-size:0.8rem; color:${w.status==='approved'?'#059669':'#d97706'}">${w.status}</span>
+          `;
+          container.appendChild(div);
+        });
+      } catch(e) {}
+    }
+
+    // REFERRAL PAGE FUNCTIONS
+    function loadReferralHistory() {
+      const container = document.getElementById("referralsListContainer");
+      const countBadge = document.getElementById("refTotalCount");
+      if (!db || !container) return;
+
+      db.collection("users").where("referredBy", "==", userId).onSnapshot(snapshot => {
+        if (countBadge) countBadge.innerText = snapshot.size;
+        if (snapshot.empty) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div style="font-size: 2.2rem; margin-bottom: 6px;">👥</div>
+              এখনও পর্যন্ত কোনো রেফারেল নেই!<br>
+              <span style="font-size: 0.78rem;">আপনার লিংক বন্ধুদের সাথে শেয়ার করুন।</span>
+            </div>
+          `;
+          return;
+        }
+
+        let html = "";
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const name = data.username ? `@${data.username}` : (data.firstName || "ব্যবহারকারী");
+          let dateStr = "সম্প্রতি";
+          if (data.createdAt && data.createdAt.toDate) {
+            const d = data.createdAt.toDate();
+            dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+          }
+
+          const avatarImg = data.profilePhotoUrl 
+            ? `<img src="${data.profilePhotoUrl}" class="ref-user-avatar" alt="Avatar">`
+            : `<div class="ref-user-avatar">${name.charAt(0).toUpperCase()}</div>`;
+
+          html += `
+            <div class="ref-user-item">
+              <div class="ref-user-left">
+                ${avatarImg}
+                <div>
+                  <div class="ref-user-name">${name}</div>
+                  <div class="ref-user-date">তারিখ: ${dateStr}</div>
+                </div>
+              </div>
+              <div class="ref-user-earning">+৳ ৫.০০</div>
+            </div>
+          `;
+        });
+        container.innerHTML = html;
+      });
+    }
+
+    function copyReferral() {
+      const inp = document.getElementById("referralLinkInput");
+      inp.select();
+      navigator.clipboard ? navigator.clipboard.writeText(inp.value) : document.execCommand("copy");
+      showToast("রেফারেল লিংক কপি হয়েছে!");
+    }
+
+    function shareReferral() {
+      const link = document.getElementById("referralLinkInput").value;
+      const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent("TIA পাখি - এ যোগ দিন এবং প্রতিদিন আয় করুন!")}`;
+      tg?.openTelegramLink ? tg.openTelegramLink(url) : window.open(url, "_blank");
+    }
+
+    // MODAL & TOAST
+    function openRulesModal() { document.getElementById("rulesModal").classList.add("active"); }
+    function closeRulesModal() { document.getElementById("rulesModal").classList.remove("active"); }
+
+    function showToast(msg) {
+      const t = document.getElementById("toastMessage");
+      document.getElementById("toastText").innerText = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2800);
+    }
+  </script>
+</body>
+</html>
