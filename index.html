@@ -271,7 +271,7 @@
     .wallet-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #00d26a); box-shadow: 0 0 10px rgba(0, 210, 106, 0.6); border-radius: var(--radius-full); transition: width 0.4s ease; }
 
     /* Channel Join Gate Modal */
-    #joinGateModal { position: fixed; inset: 0; background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 24px; overflow-y: auto; }
+    #joinGateModal { position: fixed; inset: 0; background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 24px; overflow-y: auto; }
     .gate-parrot-badge { width: 105px; height: 105px; border-radius: 50%; background: #ffffff; border: 3.5px solid var(--primary-light); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 10px 25px rgba(5, 150, 105, 0.2); font-size: 55px; animation: bounceParrot 2.2s infinite ease-in-out; }
     @keyframes bounceParrot { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
     .gate-channel-card { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-radius: var(--radius-md); background: #ffffff; border: 1.5px solid var(--primary-border); text-decoration: none; box-shadow: var(--shadow-sm); transition: all 0.2s; cursor: pointer; }
@@ -311,7 +311,7 @@
   </div>
 
   <!-- CHANNEL JOIN GATE & REGISTRATION -->
-  <section id="joinGateModal" style="display: flex;">
+  <section id="joinGateModal">
     <div style="text-align: center; max-width: 380px; width: 100%;">
       <div class="gate-parrot-badge">🦜</div>
       <h2 style="font-size: 1.5rem; margin-bottom: 6px;"><span class="dynamic-app-name">Tia Earn 🦜</span> — তে স্বাগতম</h2>
@@ -818,23 +818,53 @@
     let feePercent = 10;
     let MIN_REQUIRED_REFS = 20;
 
-    // রেফারার আইডি শনাক্ত ও সেভ করা (URL বা Telegram start_param থেকে)
+    // রেফারার আইডি সঠিকভাবে ক্যাচ এবং সুরক্ষিতভাবে সেভ করা
     function captureReferrerId() {
-      let param = tg?.initDataUnsafe?.start_param || null;
+      let param = null;
+
+      // ১. টেলিগ্রাম আনসেফ ডাটা
+      if (tg?.initDataUnsafe?.start_param) {
+        param = tg.initDataUnsafe.start_param;
+      }
+
+      // ২. কাঁচা টেলিগ্রাম initData থেকে রিড করা
+      if (!param && tg?.initData) {
+        try {
+          const initParams = new URLSearchParams(tg.initData);
+          param = initParams.get('start_param');
+        } catch(e) {}
+      }
+
+      // ৩. উইন্ডো URL সার্চ ও হ্যাশ থেকে রিড করা
       if (!param) {
         try {
           const urlParams = new URLSearchParams(window.location.search);
-          param = urlParams.get('tgWebAppStartParam') || urlParams.get('start') || urlParams.get('ref') || urlParams.get('startapp');
+          param = urlParams.get('tgWebAppStartParam') || urlParams.get('start_param') || urlParams.get('startapp') || urlParams.get('start') || urlParams.get('ref') || urlParams.get('referrer');
+          
+          if (!param && window.location.hash) {
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            param = hashParams.get('tgWebAppStartParam') || hashParams.get('startapp') || hashParams.get('start') || hashParams.get('ref');
+          }
         } catch(e) {}
       }
+
+      // ৪. ক্লিনিং ও ভ্যালিডেশন
       if (param) {
         param = String(param).trim().replace(/^ref_/, '');
-        if (param && param !== userId) {
+        if (param && param !== userId && param !== "undefined" && param !== "null") {
           try { localStorage.setItem("tia_referred_by", param); } catch(e){}
           return param;
         }
       }
-      try { return localStorage.getItem("tia_referred_by") || null; } catch(e){ return null; }
+
+      // ৫. সেভ করা রেফারার থাকলে সেটি ফেরত দেওয়া
+      try { 
+        const saved = localStorage.getItem("tia_referred_by");
+        if (saved && saved !== userId && saved !== "undefined" && saved !== "null") {
+          return saved;
+        }
+      } catch(e){}
+      return null;
     }
 
     function showJoinGate() {
@@ -880,12 +910,17 @@
       }
     }
 
-    // ON DOM LOAD (সরাসরি ২ নম্বর পিকচার দেখাবে)
+    // ON DOM LOAD
     window.addEventListener("DOMContentLoaded", async () => {
-      captureReferrerId(); // রেফারেল ট্র্যাকার ক্যাচ করা
+      captureReferrerId();
       initPills();
       renderConfigUI();
       initAdsgram();
+
+      const isVerifiedLocal = localStorage.getItem("tia_verified_" + userId) === "true";
+      if (isVerifiedLocal) {
+        showMainApp();
+      }
 
       try {
         const [genDoc, userDoc] = await Promise.all([
@@ -904,15 +939,17 @@
             return;
           }
           if (currentUser.membershipVerified) {
+            localStorage.setItem("tia_verified_" + userId, "true");
             showMainApp();
           } else {
+            localStorage.removeItem("tia_verified_" + userId);
             showJoinGate();
           }
         } else {
-          showJoinGate();
+          if (!isVerifiedLocal) showJoinGate();
         }
       } catch (e) {
-        showJoinGate();
+        if (!isVerifiedLocal) showJoinGate();
       }
 
       listenGeneralSettings();
@@ -924,19 +961,21 @@
       document.addEventListener("visibilitychange", handleReturnFromTelegram);
     });
 
-    // টেলিগ্রাম চ্যানেল ভিজিট করে ফেরত আসলে তখন স্ট্যাটাস আপডেট হবে
+    // টেলিগ্রাম চ্যানেল ভিজিট করে ফেরত আসার হ্যান্ডলার
     async function handleReturnFromTelegram() {
       if (document.visibilityState === "visible") {
-        const isGateVisible = document.getElementById("joinGateModal")?.style.display !== "none";
+        const isGateVisible = document.getElementById("joinGateModal")?.style.display === "flex";
         if (isGateVisible) {
           if (channel1Visited || channel2Visited) {
             await updateChannelJoinStatus();
           }
         } else if (currentUser && BOT_TOKEN) {
-          const { allJoined } = await verifyUserMembership(true);
-          if (!allJoined) {
+          // অ্যাপে কাজ করার মাঝে শুধুমাত্র তখনই গেট আসবে যদি সে নিশ্চিতভাবে লিভ নেয়
+          const checkRes = await verifyUserMembership(true);
+          if (checkRes.confirmedLeft) {
             if (db) db.collection("users").doc(userId).update({ membershipVerified: false }).catch(() => {});
             currentUser.membershipVerified = false;
+            localStorage.removeItem("tia_verified_" + userId);
             showJoinGate();
             showToast("আপনি চ্যানেল থেকে বের হয়ে গেছেন! পুনরায় যুক্ত হওয়া বাধ্যতামূলক।");
           }
@@ -951,7 +990,8 @@
       if (channel1Visited) {
         let isM1 = false;
         if (BOT_TOKEN && target1) {
-          isM1 = await checkUserInChat(target1, userId);
+          const res = await checkUserInChat(target1, userId);
+          isM1 = res.status === 'member';
         } else {
           isM1 = true;
         }
@@ -969,7 +1009,8 @@
       if (channel2Visited) {
         let isM2 = false;
         if (BOT_TOKEN && target2) {
-          isM2 = await checkUserInChat(target2, userId);
+          const res = await checkUserInChat(target2, userId);
+          isM2 = res.status === 'member';
         } else {
           isM2 = true;
         }
@@ -987,7 +1028,9 @@
 
     function updateReferralLink() {
       const refInput = document.getElementById("referralLinkInput");
-      if (refInput) refInput.value = `https://t.me/${BOT_USERNAME}?start=ref_${userId}`;
+      if (refInput) {
+        refInput.value = `https://t.me/${BOT_USERNAME}?start=ref_${userId}`;
+      }
     }
 
     function applyGeneralSettingsData(g) {
@@ -1134,23 +1177,28 @@
       return clean.replace(/^https?:\/\/t\.me\//, '@');
     }
 
+    // নিখুঁত মেম্বারশিপ যাচাই
     async function checkUserInChat(chatTarget, tgUserId) {
-      if (!BOT_TOKEN) return false;
-      if (!chatTarget || !tgUserId) return false;
+      if (!BOT_TOKEN || !chatTarget || !tgUserId) return { status: 'unknown' };
       try {
         const endpoint = `https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(chatTarget)}&user_id=${encodeURIComponent(tgUserId)}`;
         const res = await fetch(endpoint);
         const data = await res.json();
         if (data && data.ok && data.result) {
           const st = data.result.status;
-          if (st === 'creator' || st === 'administrator' || st === 'member') return true;
-          if (st === 'restricted' && data.result.is_member !== false) return true;
-          return false;
+          if (st === 'creator' || st === 'administrator' || st === 'member') {
+            return { status: 'member' };
+          }
+          if (st === 'restricted' && data.result.is_member !== false) {
+            return { status: 'member' };
+          }
+          if (st === 'left' || st === 'kicked') {
+            return { status: 'left' };
+          }
         }
-        return false;
+        return { status: 'unknown' };
       } catch (err) {
-        console.error("Telegram API check error:", err);
-        return false;
+        return { status: 'unknown' };
       }
     }
 
@@ -1158,8 +1206,12 @@
       const target1 = channel1ChatId || getChatTarget(null, channel1Url);
       const target2 = channel2ChatId || getChatTarget(null, channel2Url);
 
-      const isMember1 = await checkUserInChat(target1, userId);
-      const isMember2 = await checkUserInChat(target2, userId);
+      const r1 = await checkUserInChat(target1, userId);
+      const r2 = await checkUserInChat(target2, userId);
+
+      const isMember1 = r1.status === 'member';
+      const isMember2 = r2.status === 'member';
+      const confirmedLeft = (r1.status === 'left' || r2.status === 'left');
 
       const st1 = document.getElementById("gateChannel1Status");
       const btn1 = document.getElementById("gateChannel1Btn");
@@ -1189,7 +1241,7 @@
         }
       }
 
-      return { isMember1, isMember2, allJoined: isMember1 && isMember2 };
+      return { isMember1, isMember2, allJoined: isMember1 && isMember2, confirmedLeft };
     }
 
     function listenUserRealtime() {
@@ -1202,6 +1254,7 @@
             return;
           }
           if (currentUser.membershipVerified) {
+            localStorage.setItem("tia_verified_" + userId, "true");
             render(); 
           }
         }
@@ -1234,6 +1287,8 @@
           const res = await verifyUserMembership(false);
           isM1 = res.isMember1;
           isM2 = res.isMember2;
+          if (!isM1 && channel1Visited) isM1 = true;
+          if (!isM2 && channel2Visited) isM2 = true;
         } else {
           isM1 = channel1Visited;
           isM2 = channel2Visited;
@@ -1267,8 +1322,8 @@
 
           if (!doc.exists) {
             let assignedReferrer = null;
-            if (refId && refId !== userId) {
-              assignedReferrer = refId;
+            if (refId && String(refId) !== String(userId)) {
+              assignedReferrer = String(refId);
             }
 
             currentUser = {
@@ -1293,7 +1348,7 @@
             };
             await ref.set(currentUser);
 
-            // সফল রেফারের রিওয়ার্ড রেফারারের একাউন্টে প্রদান করা
+            // রেফারারের অ্যাকাউন্টে বোনাস এবং কাউন্ট নিশ্চিত করা
             if (assignedReferrer) {
               try {
                 const referrerRef = db.collection("users").doc(assignedReferrer);
@@ -1323,11 +1378,10 @@
             const existingData = doc.data();
             let updatePayload = { membershipVerified: true };
 
-            // যদি পূর্বে কোনো রেফারার না থাকে কিন্তু এখন রেফারেল লিংক দিয়ে এসেছে
-            if (!existingData.referredBy && refId && refId !== userId) {
-              updatePayload.referredBy = refId;
+            if (!existingData.referredBy && refId && String(refId) !== String(userId)) {
+              updatePayload.referredBy = String(refId);
               try {
-                const referrerRef = db.collection("users").doc(refId);
+                const referrerRef = db.collection("users").doc(String(refId));
                 const referrerDoc = await referrerRef.get();
                 if (referrerDoc.exists) {
                   await referrerRef.update({
@@ -1338,7 +1392,7 @@
                   });
 
                   await db.collection("transactions").add({
-                    userId: refId,
+                    userId: String(refId),
                     type: "referral_bonus",
                     amount: REFERRAL_BONUS_AMOUNT,
                     referredUserId: userId,
@@ -1356,6 +1410,7 @@
           }
         }
 
+        localStorage.setItem("tia_verified_" + userId, "true");
         showMainApp();
         showToast("সফলভাবে একাউন্ট ভেরিফাই ও প্রবেশ সম্পন্ন হয়েছে! 🎉");
       } catch (err) {
