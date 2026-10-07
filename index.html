@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>TIA পাখি — অল-ইন-ওয়ান</title>
+  <title id="appDocTitle">TIA পাখি — অল-ইন-ওয়ান</title>
 
   <!-- Telegram WebApp Pre-Init Hook & Error Suppressor -->
   <script>
@@ -164,6 +164,7 @@
       overflow-x: hidden; 
       padding-bottom: calc(85px + var(--safe-bottom)); 
       padding-top: var(--safe-top); 
+      transition: background-color 0.3s ease;
     }
     h1, h2, h3, h4 { font-weight: 800; color: var(--text-main); }
     p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.45; }
@@ -194,7 +195,7 @@
     .app-viewport { max-width: 480px; margin: 0 auto; padding: 16px; }
 
     /* Hero balance */
-    .hero-balance-card { background: linear-gradient(135deg, #059669 0%, #047857 100%); border-radius: var(--radius-lg); padding: 22px 20px; color: #ffffff; position: relative; overflow: hidden; box-shadow: var(--shadow-lg); margin-bottom: 16px; }
+    .hero-balance-card { background: linear-gradient(135deg, var(--primary) 0%, #047857 100%); border-radius: var(--radius-lg); padding: 22px 20px; color: #ffffff; position: relative; overflow: hidden; box-shadow: var(--shadow-lg); margin-bottom: 16px; }
     .hero-balance-card .wallet-watermark { position: absolute; right: 18px; top: 18px; opacity: 0.25; }
     .hero-balance-card .card-label { font-size: 0.88rem; font-weight: 600; color: rgba(255, 255, 255, 0.9); margin-bottom: 6px; }
     .hero-balance-card .main-balance { font-size: 2.6rem; font-weight: 900; line-height: 1.1; margin-bottom: 6px; }
@@ -307,7 +308,7 @@
 
   <!-- TOAST NOTIFICATION -->
   <div id="toastMessage">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
     <span id="toastText">নোটিফিকেশন</span>
   </div>
 
@@ -315,7 +316,7 @@
   <section id="joinGateModal" style="display: none;">
     <div style="text-align: center; max-width: 380px; width: 100%;">
       <div class="gate-parrot-badge">🦜</div>
-      <h2 style="font-size: 1.5rem; margin-bottom: 6px;">TIA পাখি — তে স্বাগতম</h2>
+      <h2 style="font-size: 1.5rem; margin-bottom: 6px;"><span class="dynamic-app-name">TIA পাখি</span> — তে স্বাগতম</h2>
       <p style="font-size: 0.86rem; margin-bottom: 22px; color: var(--text-muted);">
         অ্যাপে কাজ শুরু করার পূর্বে আমাদের অফিসিয়াল চ্যানেলগুলোতে যুক্ত থাকা বাধ্যতামূলক।
       </p>
@@ -400,7 +401,7 @@
       <div class="refer-link-card" onclick="switchView('refer')">
         <div style="display: flex; align-items: center; gap: 14px;">
           <div class="refer-icon-circle">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
               <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
@@ -413,7 +414,7 @@
           </div>
         </div>
         <div style="background: var(--primary-tint); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid var(--primary-border); flex-shrink: 0;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
       </div>
 
@@ -441,7 +442,7 @@
           <h2 style="font-size: 2rem; margin-top: 2px;"><span id="adCompletedCount">0</span>/<span id="totalDailyLimit">90</span></h2>
         </div>
         <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--primary-tint); display: flex; align-items: center; justify-content: center;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7"/><path d="M14 14.66V17c0 .55.45 1 1 1h2"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7"/><path d="M14 14.66V17c0 .55.45 1 1 1h2"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
         </div>
       </div>
 
@@ -486,7 +487,7 @@
 
     <!-- 3. TASKS VIEW (tasks.html) -->
     <div id="view-tasks" class="page-view">
-      <div class="card" style="margin-bottom: 16px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff;">
+      <div class="card" style="margin-bottom: 16px; background: linear-gradient(135deg, var(--primary) 0%, #047857 100%); color: #ffffff;">
         <h3 style="color: #ffffff; font-size: 1.25rem;">⚡ মাইক্রো টাস্ক জোন</h3>
         <p style="color: rgba(255, 255, 255, 0.9); font-size: 0.84rem; margin-top: 4px;">সহজ সোশ্যাল মিডিয়া কাজগুলো সম্পন্ন করে স্ক্রিনশট জমা দিন এবং জিতে নিন আকর্ষণীয় রিওয়ার্ড।</p>
       </div>
@@ -504,10 +505,10 @@
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
         <div class="card" style="margin: 0; text-align: center; padding: 16px;">
           <div style="width: 38px; height: 38px; border-radius: 50%; background: var(--primary-tint); display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
           </div>
           <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700;">মিনিমাম উইথড্র</span>
-          <h3 style="font-size: 1.25rem; margin-top: 4px; color: #059669;">৳ 50</h3>
+          <h3 style="font-size: 1.25rem; margin-top: 4px; color: var(--primary);">৳ 50</h3>
         </div>
 
         <div class="card" style="margin: 0; text-align: center; padding: 16px;">
@@ -523,10 +524,10 @@
       <div class="referral-card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <span style="font-size: 0.86rem; font-weight: 800; color: #064e3b; display: flex; align-items: center; gap: 6px;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             <span id="refRequirementTitle">উইথড্র শর্ত (২০টি রেফার)</span>
           </span>
-          <span style="font-size: 0.82rem; font-weight: 800; color: #059669;" id="refCountText">০ / ২০ রেফার</span>
+          <span style="font-size: 0.82rem; font-weight: 800; color: var(--primary);" id="refCountText">০ / ২০ রেফার</span>
         </div>
 
         <div class="wallet-progress-bar">
@@ -535,7 +536,7 @@
 
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
           <span id="refNotice" style="color: var(--text-muted);">আর ২০টি রেফার প্রয়োজন</span>
-          <a href="javascript:void(0)" onclick="switchView('refer')" style="color: #059669; font-weight: 800; text-decoration: none;">রেফার করুন &rarr;</a>
+          <a href="javascript:void(0)" onclick="switchView('refer')" style="color: var(--primary); font-weight: 800; text-decoration: none;">রেফার করুন &rarr;</a>
         </div>
       </div>
 
@@ -591,7 +592,7 @@
         <div class="stat-card-item">
           <span class="stat-icon">💰</span>
           <span class="stat-title">মোট ব্যালেন্স</span>
-          <span class="stat-value" style="color: #059669;">৳ <span id="pBalance">0.00</span></span>
+          <span class="stat-value" style="color: var(--primary);">৳ <span id="pBalance">0.00</span></span>
         </div>
         <div class="stat-card-item">
           <span class="stat-icon">💵</span>
@@ -758,9 +759,9 @@
   <!-- JAVASCRIPT LOGIC CORE -->
   <script>
     const IMGBB_API_KEY = "728b67da57cb2b9c5a563d5fa4ba6d10";
-    const BOT_USERNAME = "TiaPakhiEarn_Bot";
+    let BOT_USERNAME = "TiaPakhiEarn_Bot"; // ডায়নামিক: এডমিন প্যানেল থেকে অটো আপডেট হবে
 
-    // Telegram Bot Token (এখানে আপনার Bot Token বসাতে পারেন অথবা Firebase Settings -> general -> botToken হিসেবে দিতে পারেন)
+    // Telegram Bot Token ও চ্যানেল ভেরিয়েবল
     let BOT_TOKEN = "";
     let channel1ChatId = "";
     let channel2ChatId = "";
@@ -803,8 +804,8 @@
     };
     let adsgramController = null;
 
-    // Target configuration
-    const TARGET_TIERS = [
+    // ডায়নামিক টার্গেট কনফিগারেশন (এডমিন প্যানেলের সাথে সিঙ্কড)
+    let TARGET_TIERS = [
       { id: "tier_3", count: 3, bonus: 30, colorBg: "#eff6ff", colorText: "#2563eb", title: "৩ টি রেফার", sub: "টার্গেট সম্পন্ন করুন", badge: "১" },
       { id: "tier_5", count: 5, bonus: 50, colorBg: "#fefce8", colorText: "#d97706", title: "৫ টি রেফার", sub: "টার্গেট সম্পন্ন করুন", badge: "২" },
       { id: "tier_10", count: 10, bonus: 100, colorBg: "#ecfdf5", colorText: "#059669", title: "১০ টি রেফার", sub: "টার্গেট সম্পন্ন করুন", badge: "৩" },
@@ -855,14 +856,16 @@
       initPills();
       renderConfigUI();
       initAdsgram();
+
+      // ফায়ারবেস থেকে লাইভ সেটিংস ও কনফিগ লোড
+      await fetchInitialSettings();
       listenGeneralSettings();
       listenAdSettings();
       await checkAndInitUser();
 
-      const refInput = document.getElementById("referralLinkInput");
-      if (refInput) refInput.value = `https://t.me/${BOT_USERNAME}?start=ref_${userId}`;
+      updateReferralLink();
 
-      // Tab / Window focus changes (ইউজার টেলিগ্রামে জয়েন করে বা বের হয়ে ফিরে আসলে লাইভ চেক)
+      // Tab / Window focus changes (টেলিগ্রাম চ্যানেলে জয়েন করে ফিরে আসলে চেক)
       document.addEventListener("visibilitychange", async () => {
         if (document.visibilityState === "visible") {
           const isGateVisible = document.getElementById("joinGateModal")?.style.display !== "none";
@@ -881,28 +884,114 @@
       });
     });
 
+    function updateReferralLink() {
+      const refInput = document.getElementById("referralLinkInput");
+      if (refInput) refInput.value = `https://t.me/${BOT_USERNAME}?start=ref_${userId}`;
+    }
+
+    // FETCH INITIAL SETTINGS ONCE
+    async function fetchInitialSettings() {
+      if (!db) return;
+      try {
+        const doc = await db.collection("settings").doc("general").get();
+        if (doc.exists) {
+          applyGeneralSettingsData(doc.data());
+        }
+      } catch(e) {
+        console.error("Settings load error:", e);
+      }
+    }
+
+    // এডমিন প্যানেলের পরিবর্তনগুলো ইউজার প্যানেলে সরাসরি লাইভ প্রয়োগ করার ফাংশন
+    function applyGeneralSettingsData(g) {
+      if (!g) return;
+
+      // ১. বট ইউজারনেম আপডেট
+      if (g.botUsername) {
+        BOT_USERNAME = String(g.botUsername).trim().replace('@', '');
+        updateReferralLink();
+      }
+
+      if (g.botToken) BOT_TOKEN = g.botToken;
+      if (g.channel1Url) channel1Url = g.channel1Url;
+      if (g.channel2Url) channel2Url = g.channel2Url;
+      if (g.channel1ChatId || g.channel1Id) channel1ChatId = g.channel1ChatId || g.channel1Id;
+      if (g.channel2ChatId || g.channel2Id) channel2ChatId = g.channel2ChatId || g.channel2Id;
+      if (g.usdRate) currentUsdRate = Number(g.usdRate);
+      if (g.minWithdrawRefs !== undefined) MIN_REQUIRED_REFS = Number(g.minWithdrawRefs);
+      if (g.withdrawalFeePercent !== undefined) {
+        feePercent = Number(g.withdrawalFeePercent);
+        const feeLbl = document.getElementById("walletFeePercentLbl");
+        if (feeLbl) feeLbl.innerText = feePercent;
+      }
+      const refReqTitle = document.getElementById("refRequirementTitle");
+      if (refReqTitle) refReqTitle.innerText = `উইথড্র শর্ত (${MIN_REQUIRED_REFS}টি রেফার)`;
+
+      // ২. অ্যাপের কালার ও থিম পরিবর্তন (এডমিন থেকে লাইভ সিঙ্ক)
+      if (g.primaryColor) {
+        document.documentElement.style.setProperty('--primary', g.primaryColor);
+        document.documentElement.style.setProperty('--primary-light', g.primaryColor);
+        document.documentElement.style.setProperty('--primary-deep', g.primaryColor);
+      }
+      if (g.bgColor) {
+        document.documentElement.style.setProperty('--bg-canvas', g.bgColor);
+        document.body.style.backgroundColor = g.bgColor;
+      }
+      if (g.appName) {
+        document.getElementById("appDocTitle").innerText = `${g.appName} — অল-ইন-ওয়ান`;
+        document.querySelectorAll(".dynamic-app-name").forEach(el => el.innerText = g.appName);
+      }
+
+      // ৩. রেফার টার্গেট রিওয়ার্ডস লাইভ সিঙ্ক (এডমিন থেকে পরিবর্তন সরাসরি কাজ করবে)
+      if (g.targetTiers) {
+        TARGET_TIERS = [
+          {
+            id: "tier_3",
+            count: Number(g.targetTiers.tier_3?.count !== undefined ? g.targetTiers.tier_3.count : 3),
+            bonus: Number(g.targetTiers.tier_3?.bonus !== undefined ? g.targetTiers.tier_3.bonus : 30),
+            colorBg: "#eff6ff", colorText: "#2563eb",
+            title: `${g.targetTiers.tier_3?.count || 3} টি রেফার`,
+            sub: "টার্গেট সম্পন্ন করুন", badge: "১"
+          },
+          {
+            id: "tier_5",
+            count: Number(g.targetTiers.tier_5?.count !== undefined ? g.targetTiers.tier_5.count : 5),
+            bonus: Number(g.targetTiers.tier_5?.bonus !== undefined ? g.targetTiers.tier_5.bonus : 50),
+            colorBg: "#fefce8", colorText: "#d97706",
+            title: `${g.targetTiers.tier_5?.count || 5} টি রেফার`,
+            sub: "টার্গেট সম্পন্ন করুন", badge: "২"
+          },
+          {
+            id: "tier_10",
+            count: Number(g.targetTiers.tier_10?.count !== undefined ? g.targetTiers.tier_10.count : 10),
+            bonus: Number(g.targetTiers.tier_10?.bonus !== undefined ? g.targetTiers.tier_10.bonus : 100),
+            colorBg: "#ecfdf5", colorText: "#059669",
+            title: `${g.targetTiers.tier_10?.count || 10} টি রেফার`,
+            sub: "টার্গেট সম্পন্ন করুন", badge: "৩"
+          },
+          {
+            id: "tier_20",
+            count: Number(g.targetTiers.tier_20?.count !== undefined ? g.targetTiers.tier_20.count : 20),
+            bonus: Number(g.targetTiers.tier_20?.bonus !== undefined ? g.targetTiers.tier_20.bonus : 250),
+            colorBg: "#fdf2f8", colorText: "#db2777",
+            title: `${g.targetTiers.tier_20?.count || 20} টি রেফার`,
+            sub: "মেগা রিওয়ার্ড বোনাস", badge: "৪"
+          }
+        ];
+        renderTargetCards();
+      }
+
+      calc();
+      updateReferralCard();
+      render();
+    }
+
     // GENERAL SETTINGS LISTENER
     function listenGeneralSettings() {
       if (!db) return;
       db.collection("settings").doc("general").onSnapshot(doc => {
         if (doc.exists) {
-          const g = doc.data();
-          if (g.botToken) BOT_TOKEN = g.botToken;
-          if (g.channel1Url) channel1Url = g.channel1Url;
-          if (g.channel2Url) channel2Url = g.channel2Url;
-          if (g.channel1ChatId || g.channel1Id) channel1ChatId = g.channel1ChatId || g.channel1Id;
-          if (g.channel2ChatId || g.channel2Id) channel2ChatId = g.channel2ChatId || g.channel2Id;
-          if (g.usdRate) currentUsdRate = Number(g.usdRate);
-          if (g.minWithdrawRefs !== undefined) MIN_REQUIRED_REFS = Number(g.minWithdrawRefs);
-          if (g.withdrawalFeePercent !== undefined) {
-            feePercent = Number(g.withdrawalFeePercent);
-            document.getElementById("walletFeePercentLbl").innerText = feePercent;
-          }
-          const refReqTitle = document.getElementById("refRequirementTitle");
-          if (refReqTitle) refReqTitle.innerText = `উইথড্র শর্ত (${MIN_REQUIRED_REFS}টি রেফার)`;
-          calc();
-          updateReferralCard();
-          render();
+          applyGeneralSettingsData(doc.data());
         }
       });
     }
@@ -966,7 +1055,7 @@
     }
 
     async function checkUserInChat(chatTarget, tgUserId) {
-      if (!BOT_TOKEN) return true; // Bot token না থাকলে ফলব্যাক হিসেবে সত্য ধরা হবে
+      if (!BOT_TOKEN) return false;
       if (!chatTarget || !tgUserId) return false;
       try {
         const endpoint = `https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${encodeURIComponent(chatTarget)}&user_id=${encodeURIComponent(tgUserId)}`;
@@ -992,7 +1081,6 @@
       const isMember1 = await checkUserInChat(target1, userId);
       const isMember2 = await checkUserInChat(target2, userId);
 
-      // UI আপডেট
       const st1 = document.getElementById("gateChannel1Status");
       const btn1 = document.getElementById("gateChannel1Btn");
       if (st1 && btn1) {
@@ -1040,15 +1128,12 @@
           return;
         }
 
-        // লাইভ মেম্বারশিপ যাচাই
         const { allJoined } = await verifyUserMembership(true);
-        if (!allJoined && BOT_TOKEN) {
-          // ইউজার চ্যানেল থেকে বের হয়ে গেলে বা জয়েন না থাকলে গেট স্ক্রিন আসবে
+        if (!allJoined) {
           await ref.update({ membershipVerified: false }).catch(() => {});
           currentUser.membershipVerified = false;
           document.getElementById("joinGateModal").style.display = "flex";
         } else {
-          // ইউজার অলরেডি চ্যানেলে যুক্ত আছে -> সরাসরি ভেতরে প্রবেশ
           if (!currentUser.membershipVerified) {
             await ref.update({ membershipVerified: true }).catch(() => {});
             currentUser.membershipVerified = true;
@@ -1092,16 +1177,30 @@
       btn.disabled = true;
 
       try {
+        if (!BOT_TOKEN) {
+          showToast("বট কনফিগারেশন ত্রুটি! ফায়ারবেসে Bot Token দিন।");
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          return;
+        }
+
         const { isMember1, isMember2, allJoined } = await verifyUserMembership(false);
 
-        if (BOT_TOKEN && !isMember1) {
+        if (!isMember1 && !isMember2) {
+          showToast("উভয় চ্যানেলে যুক্ত হওয়া বাধ্যতামূলক!");
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          return;
+        }
+
+        if (!isMember1) {
           showToast("আপনি এখনও ১ম অফিশিয়াল চ্যানেলে যুক্ত হননি!");
           btn.disabled = false;
           btn.innerHTML = originalText;
           return;
         }
 
-        if (BOT_TOKEN && !isMember2) {
+        if (!isMember2) {
           showToast("আপনি এখনও ২য় সাপোর্ট গ্রুপে যুক্ত হননি!");
           btn.disabled = false;
           btn.innerHTML = originalText;
@@ -1198,7 +1297,7 @@
       updateReferralCard();
     }
 
-    // HOME REFERRAL TARGET CARDS
+    // HOME REFERRAL TARGET CARDS (ডায়নামিকালি রেন্ডার হয়)
     function renderTargetCards() {
       const container = document.getElementById("targetCardsContainer");
       if (!container) return;
@@ -1383,7 +1482,7 @@
             html += `
               <div class="task-card-item">
                 <div class="task-card-icon">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                 </div>
                 <div class="task-card-content">
                   <div class="task-card-title">${t.title}</div>
@@ -1542,7 +1641,7 @@
 
       if (noticeEl) {
         if (refCount >= MIN_REQUIRED_REFS) {
-          noticeEl.innerHTML = `<span style="color:#059669; font-weight:700;">✅ উইথড্র আনলক হয়েছে!</span>`;
+          noticeEl.innerHTML = `<span style="color:var(--primary); font-weight:700;">✅ উইথড্র আনলক হয়েছে!</span>`;
         } else {
           noticeEl.innerText = `আর ${MIN_REQUIRED_REFS - refCount}টি রেফার প্রয়োজন`;
         }
@@ -1619,7 +1718,7 @@
               <strong>${w.method} - ৳${w.amount}</strong>
               <div style="font-size:0.75rem; color:var(--text-muted);">${w.accountNumber}</div>
             </div>
-            <span style="font-weight:700; font-size:0.8rem; color:${w.status==='approved'?'#059669':'#d97706'}">${w.status}</span>
+            <span style="font-weight:700; font-size:0.8rem; color:${w.status==='approved'?'var(--primary)':'#d97706'}">${w.status}</span>
           `;
           container.appendChild(div);
         });
@@ -1685,7 +1784,8 @@
 
     function shareReferral() {
       const link = document.getElementById("referralLinkInput").value;
-      const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent("TIA পাখি - এ যোগ দিন এবং প্রতিদিন আয় করুন!")}`;
+      const appName = document.title.split('—')[0].trim() || "TIA পাখি";
+      const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(`${appName} - এ যোগ দিন এবং প্রতিদিন আয় করুন!`)}`;
       tg?.openTelegramLink ? tg.openTelegramLink(url) : window.open(url, "_blank");
     }
 
