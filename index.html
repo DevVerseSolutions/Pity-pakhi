@@ -330,7 +330,7 @@
 
         <div onclick="visitChannel(2)" id="gateChannel2Btn" class="gate-channel-card">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#0088cc"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#0088cc"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
             <span style="font-weight: 800; font-size: 0.94rem; color: var(--text-main);">২য় অফিশিয়াল চ্যানেল</span>
           </div>
           <span id="gateChannel2Status" style="color: var(--primary); font-weight: 800; font-size: 0.85rem;">যুক্ত হন ➔</span>
@@ -578,7 +578,7 @@
     <!-- 5. PROFILE VIEW (profile.html) -->
     <div id="view-profile" class="page-view">
       <div class="card user-card">
-        <img id="userProfileAvatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><rect width='80' height='80' fill='%23ecfdf5'/><text x='50%' y='55%' font-size='38' text-anchor='middle' dominant-baseline='middle'>🦜</text></svg>" alt="Avatar" class="user-avatar-main" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 80 80\'><rect width=\'80\' height=\'80\' fill=\'%23ecfdf5\'/><text x=\'50%\' y=\'55%\' font-size=\'38\' text-anchor=\'middle\' dominant-baseline=\'middle\'>🦜</text></svg>'">
+        <img id="userProfileAvatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><rect width='80' height='80' fill='%23ecfdf5'/><text x='50%' y='55%' font-size='38' text-anchor='middle' dominant-baseline='middle'>🦜</text></svg>" alt="Avatar" class="user-avatar-main" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 80 80\'><rect width=\'80\' height=\'80\' fill=\'#ecfdf5\'/><text x=\'50%\' y=\'55%\' font-size=\'38\' text-anchor=\'middle\' dominant-baseline=\'middle\'>🦜</text></svg>'">
         <h3 id="userProfileName">Tia Earn 🦜</h3>
         <p id="userProfileHandle" style="font-size: 0.88rem; color: var(--primary); font-weight: 800; margin-bottom: 10px;">@username</p>
         <span style="font-size: 0.75rem; background: var(--primary-tint); color: var(--primary-deep); border: 1px solid var(--primary-border); padding: 5px 14px; border-radius: var(--radius-full); font-weight: 800;">
@@ -792,6 +792,7 @@
     let channel2Visited = false;
     let channel1Url = "https://t.me/telegram";
     let channel2Url = "https://t.me/telegram";
+    let REFERRAL_BONUS_AMOUNT = 20.00;
 
     // Ad Config
     let APP_CONFIG = {
@@ -816,6 +817,25 @@
     const withdrawalAmounts = [50, 100, 200, 500, 1000];
     let feePercent = 10;
     let MIN_REQUIRED_REFS = 20;
+
+    // রেফারার আইডি শনাক্ত ও সেভ করা (URL বা Telegram start_param থেকে)
+    function captureReferrerId() {
+      let param = tg?.initDataUnsafe?.start_param || null;
+      if (!param) {
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          param = urlParams.get('tgWebAppStartParam') || urlParams.get('start') || urlParams.get('ref') || urlParams.get('startapp');
+        } catch(e) {}
+      }
+      if (param) {
+        param = String(param).trim().replace(/^ref_/, '');
+        if (param && param !== userId) {
+          try { localStorage.setItem("tia_referred_by", param); } catch(e){}
+          return param;
+        }
+      }
+      try { return localStorage.getItem("tia_referred_by") || null; } catch(e){ return null; }
+    }
 
     function showJoinGate() {
       document.getElementById("joinGateModal").style.display = "flex";
@@ -862,6 +882,7 @@
 
     // ON DOM LOAD (সরাসরি ২ নম্বর পিকচার দেখাবে)
     window.addEventListener("DOMContentLoaded", async () => {
+      captureReferrerId(); // রেফারেল ট্র্যাকার ক্যাচ করা
       initPills();
       renderConfigUI();
       initAdsgram();
@@ -983,6 +1004,7 @@
       if (g.channel1ChatId || g.channel1Id) channel1ChatId = g.channel1ChatId || g.channel1Id;
       if (g.channel2ChatId || g.channel2Id) channel2ChatId = g.channel2ChatId || g.channel2Id;
       if (g.usdRate) currentUsdRate = Number(g.usdRate);
+      if (g.referralBonus !== undefined) REFERRAL_BONUS_AMOUNT = Number(g.referralBonus);
       if (g.minWithdrawRefs !== undefined) MIN_REQUIRED_REFS = Number(g.minWithdrawRefs);
       if (g.withdrawalFeePercent !== undefined) {
         feePercent = Number(g.withdrawalFeePercent);
@@ -1241,8 +1263,14 @@
         if (db) {
           const ref = db.collection("users").doc(userId);
           const doc = await ref.get();
+          const refId = captureReferrerId();
 
           if (!doc.exists) {
+            let assignedReferrer = null;
+            if (refId && refId !== userId) {
+              assignedReferrer = refId;
+            }
+
             currentUser = {
               telegramUserId: userId,
               firstName: tgUser?.first_name || "User",
@@ -1260,13 +1288,71 @@
               claimedTargets: [],
               membershipVerified: true,
               isBanned: false,
+              referredBy: assignedReferrer,
               createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             await ref.set(currentUser);
+
+            // সফল রেফারের রিওয়ার্ড রেফারারের একাউন্টে প্রদান করা
+            if (assignedReferrer) {
+              try {
+                const referrerRef = db.collection("users").doc(assignedReferrer);
+                const referrerDoc = await referrerRef.get();
+                if (referrerDoc.exists) {
+                  await referrerRef.update({
+                    balance: firebase.firestore.FieldValue.increment(REFERRAL_BONUS_AMOUNT),
+                    totalEarned: firebase.firestore.FieldValue.increment(REFERRAL_BONUS_AMOUNT),
+                    totalReferrals: firebase.firestore.FieldValue.increment(1),
+                    referralsCount: firebase.firestore.FieldValue.increment(1)
+                  });
+
+                  await db.collection("transactions").add({
+                    userId: assignedReferrer,
+                    type: "referral_bonus",
+                    amount: REFERRAL_BONUS_AMOUNT,
+                    referredUserId: userId,
+                    description: `রেফারেল বোনাস (${currentUser.username || currentUser.firstName || 'ইউজার'})`,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                  });
+                }
+              } catch(e) {
+                console.error("Referral bonus update failed:", e);
+              }
+            }
           } else {
-            await ref.update({ membershipVerified: true });
-            currentUser = doc.data();
-            currentUser.membershipVerified = true;
+            const existingData = doc.data();
+            let updatePayload = { membershipVerified: true };
+
+            // যদি পূর্বে কোনো রেফারার না থাকে কিন্তু এখন রেফারেল লিংক দিয়ে এসেছে
+            if (!existingData.referredBy && refId && refId !== userId) {
+              updatePayload.referredBy = refId;
+              try {
+                const referrerRef = db.collection("users").doc(refId);
+                const referrerDoc = await referrerRef.get();
+                if (referrerDoc.exists) {
+                  await referrerRef.update({
+                    balance: firebase.firestore.FieldValue.increment(REFERRAL_BONUS_AMOUNT),
+                    totalEarned: firebase.firestore.FieldValue.increment(REFERRAL_BONUS_AMOUNT),
+                    totalReferrals: firebase.firestore.FieldValue.increment(1),
+                    referralsCount: firebase.firestore.FieldValue.increment(1)
+                  });
+
+                  await db.collection("transactions").add({
+                    userId: refId,
+                    type: "referral_bonus",
+                    amount: REFERRAL_BONUS_AMOUNT,
+                    referredUserId: userId,
+                    description: `রেফারেল বোনাস (${existingData.username || existingData.firstName || 'ইউজার'})`,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                  });
+                }
+              } catch(e) {
+                console.error("Referral bonus update failed:", e);
+              }
+            }
+
+            await ref.update(updatePayload);
+            currentUser = Object.assign({}, existingData, updatePayload);
           }
         }
 
@@ -1792,7 +1878,7 @@
                   <div class="ref-user-date">তারিখ: ${dateStr}</div>
                 </div>
               </div>
-              <div class="ref-user-earning">+৳ ৫.০০</div>
+              <div class="ref-user-earning">+৳ ${Number(REFERRAL_BONUS_AMOUNT).toFixed(2)}</div>
             </div>
           `;
         });
