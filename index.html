@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title id="appDocTitle">Tia Earn— অল-ইন-ওয়ান</title>
+  <title id="appDocTitle">Tia Earn 🦜 — অল-ইন-ওয়ান</title>
 
   <!-- Telegram WebApp Pre-Init Hook & Error Suppressor -->
   <script>
@@ -310,11 +310,11 @@
     <span id="toastText">নোটিফিকেশন</span>
   </div>
 
-  <!-- CHANNEL JOIN GATE & REGISTRATION (শুরুতেই ২ নাম্বার পেজ দৃশ্যমান থাকবে) -->
+  <!-- CHANNEL JOIN GATE & REGISTRATION -->
   <section id="joinGateModal" style="display: flex;">
     <div style="text-align: center; max-width: 380px; width: 100%;">
       <div class="gate-parrot-badge">🦜</div>
-      <h2 style="font-size: 1.5rem; margin-bottom: 6px;"><span class="dynamic-app-name">Tia Earn</span> — তে স্বাগতম</h2>
+      <h2 style="font-size: 1.5rem; margin-bottom: 6px;"><span class="dynamic-app-name">Tia Earn 🦜</span> — তে স্বাগতম</h2>
       <p style="font-size: 0.86rem; margin-bottom: 22px; color: var(--text-muted);">
         অ্যাপে কাজ শুরু করার পূর্বে আমাদের অফিসিয়াল চ্যানেলগুলোতে যুক্ত থাকা বাধ্যতামূলক।
       </p>
@@ -330,7 +330,7 @@
 
         <div onclick="visitChannel(2)" id="gateChannel2Btn" class="gate-channel-card">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#0088cc"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#0088cc"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
             <span style="font-weight: 800; font-size: 0.94rem; color: var(--text-main);">২য় অফিশিয়াল চ্যানেল</span>
           </div>
           <span id="gateChannel2Status" style="color: var(--primary); font-weight: 800; font-size: 0.85rem;">যুক্ত হন ➔</span>
@@ -367,7 +367,6 @@
     <!-- 1. HOME VIEW (index.html) -->
     <div id="view-home" class="page-view active">
       <div class="hero-balance-card">
-        <!-- টিয়া পাখির ইমোজি বসানো হয়েছে -->
         <span class="wallet-watermark">🦜</span>
         <div class="card-label">আপনার মোট আয়</div>
         <div class="main-balance">৳ <span id="homeMainBalance">0.00</span></div>
@@ -818,7 +817,6 @@
     let feePercent = 10;
     let MIN_REQUIRED_REFS = 20;
 
-    // দৃশ্যমান স্ক্রিন কন্ট্রোল (১ নাম্বার পেজের ফ্লাস ছাড়া চলা)
     function showJoinGate() {
       document.getElementById("joinGateModal").style.display = "flex";
       document.getElementById("appTopHeader").style.display = "none";
@@ -827,7 +825,7 @@
     }
 
     function showMainApp() {
-      render(); // সম্পূর্ণ আসল ডাটা রেন্ডার নিশ্চিত করার পর ৩ নাম্বার পেজ প্রদর্শন
+      render();
       document.getElementById("joinGateModal").style.display = "none";
       document.getElementById("appTopHeader").style.display = "flex";
       document.getElementById("appMainViewport").style.display = "block";
@@ -862,7 +860,7 @@
       }
     }
 
-    // ON DOM LOAD (দ্রুত প্যারালাল লোড)
+    // ON DOM LOAD (সরাসরি ২ নম্বর পিকচার দেখাবে)
     window.addEventListener("DOMContentLoaded", async () => {
       initPills();
       renderConfigUI();
@@ -878,8 +876,17 @@
           applyGeneralSettingsData(genDoc.data());
         }
 
-        if (userDoc) {
-          await processUserInit(userDoc);
+        if (userDoc && userDoc.exists) {
+          currentUser = userDoc.data();
+          if (currentUser.isBanned) {
+            document.body.innerHTML = "<h3 style='text-align:center; margin-top:40px; color:#ef4444;'>আপনার অ্যাকাউন্টটি স্থগিত (Banned) করা হয়েছে।</h3>";
+            return;
+          }
+          if (currentUser.membershipVerified) {
+            showMainApp();
+          } else {
+            showJoinGate();
+          }
         } else {
           showJoinGate();
         }
@@ -892,23 +899,70 @@
       listenUserRealtime();
       updateReferralLink();
 
-      document.addEventListener("visibilitychange", async () => {
-        if (document.visibilityState === "visible") {
-          const isGateVisible = document.getElementById("joinGateModal")?.style.display !== "none";
-          if (isGateVisible) {
-            await verifyUserMembership(true);
-          } else if (currentUser && BOT_TOKEN) {
-            const { allJoined } = await verifyUserMembership(true);
-            if (!allJoined) {
-              if (db) db.collection("users").doc(userId).update({ membershipVerified: false }).catch(() => {});
-              currentUser.membershipVerified = false;
-              showJoinGate();
-              showToast("আপনি চ্যানেল থেকে বের হয়ে গেছেন! পুনরায় যুক্ত হওয়া বাধ্যতামূলক।");
-            }
+      window.addEventListener("focus", handleReturnFromTelegram);
+      document.addEventListener("visibilitychange", handleReturnFromTelegram);
+    });
+
+    // টেলিগ্রাম চ্যানেল ভিজিট করে ফেরত আসলে তখন স্ট্যাটাস আপডেট হবে
+    async function handleReturnFromTelegram() {
+      if (document.visibilityState === "visible") {
+        const isGateVisible = document.getElementById("joinGateModal")?.style.display !== "none";
+        if (isGateVisible) {
+          if (channel1Visited || channel2Visited) {
+            await updateChannelJoinStatus();
+          }
+        } else if (currentUser && BOT_TOKEN) {
+          const { allJoined } = await verifyUserMembership(true);
+          if (!allJoined) {
+            if (db) db.collection("users").doc(userId).update({ membershipVerified: false }).catch(() => {});
+            currentUser.membershipVerified = false;
+            showJoinGate();
+            showToast("আপনি চ্যানেল থেকে বের হয়ে গেছেন! পুনরায় যুক্ত হওয়া বাধ্যতামূলক।");
           }
         }
-      });
-    });
+      }
+    }
+
+    async function updateChannelJoinStatus() {
+      const target1 = channel1ChatId || getChatTarget(null, channel1Url);
+      const target2 = channel2ChatId || getChatTarget(null, channel2Url);
+
+      if (channel1Visited) {
+        let isM1 = false;
+        if (BOT_TOKEN && target1) {
+          isM1 = await checkUserInChat(target1, userId);
+        } else {
+          isM1 = true;
+        }
+        if (isM1) {
+          const st1 = document.getElementById("gateChannel1Status");
+          const btn1 = document.getElementById("gateChannel1Btn");
+          if (st1 && btn1) {
+            st1.innerText = "যুক্ত আছেন ✓";
+            st1.style.color = "#059669";
+            btn1.style.borderColor = "#10b981";
+          }
+        }
+      }
+
+      if (channel2Visited) {
+        let isM2 = false;
+        if (BOT_TOKEN && target2) {
+          isM2 = await checkUserInChat(target2, userId);
+        } else {
+          isM2 = true;
+        }
+        if (isM2) {
+          const st2 = document.getElementById("gateChannel2Status");
+          const btn2 = document.getElementById("gateChannel2Btn");
+          if (st2 && btn2) {
+            st2.innerText = "যুক্ত আছেন ✓";
+            st2.style.color = "#059669";
+            btn2.style.borderColor = "#10b981";
+          }
+        }
+      }
+    }
 
     function updateReferralLink() {
       const refInput = document.getElementById("referralLinkInput");
@@ -1116,32 +1170,6 @@
       return { isMember1, isMember2, allJoined: isMember1 && isMember2 };
     }
 
-    async function processUserInit(doc) {
-      if (!doc || !doc.exists) {
-        showJoinGate();
-        await verifyUserMembership(true);
-      } else {
-        currentUser = doc.data();
-        if (currentUser.isBanned) {
-          document.body.innerHTML = "<h3 style='text-align:center; margin-top:40px; color:#ef4444;'>আপনার অ্যাকাউন্টটি স্থগিত (Banned) করা হয়েছে।</h3>";
-          return;
-        }
-
-        const { allJoined } = await verifyUserMembership(true);
-        if (!allJoined) {
-          await db.collection("users").doc(userId).update({ membershipVerified: false }).catch(() => {});
-          currentUser.membershipVerified = false;
-          showJoinGate();
-        } else {
-          if (!currentUser.membershipVerified) {
-            await db.collection("users").doc(userId).update({ membershipVerified: true }).catch(() => {});
-            currentUser.membershipVerified = true;
-          }
-          showMainApp();
-        }
-      }
-    }
-
     function listenUserRealtime() {
       if (!db) return;
       db.collection("users").doc(userId).onSnapshot(s => {
@@ -1160,14 +1188,14 @@
 
     function visitChannel(channelNum) {
       const url = channelNum === 1 ? channel1Url : channel2Url;
-      if (tg?.openTelegramLink) tg.openTelegramLink(url);
-      else window.open(url, "_blank");
-
       if (channelNum === 1) {
         channel1Visited = true;
       } else {
         channel2Visited = true;
       }
+
+      if (tg?.openTelegramLink) tg.openTelegramLink(url);
+      else window.open(url, "_blank");
     }
 
     async function verifyTelegramChannels() {
@@ -1177,31 +1205,34 @@
       btn.disabled = true;
 
       try {
-        if (!BOT_TOKEN) {
-          showToast("বট কনফিগারেশন ত্রুটি! ফায়ারবেসে Bot Token দিন।");
-          btn.disabled = false;
-          btn.innerHTML = originalText;
-          return;
+        let isM1 = false;
+        let isM2 = false;
+
+        if (BOT_TOKEN) {
+          const res = await verifyUserMembership(false);
+          isM1 = res.isMember1;
+          isM2 = res.isMember2;
+        } else {
+          isM1 = channel1Visited;
+          isM2 = channel2Visited;
         }
 
-        const { isMember1, isMember2, allJoined } = await verifyUserMembership(false);
-
-        if (!isMember1 && !isMember2) {
+        if (!isM1 && !isM2) {
           showToast("উভয় চ্যানেলে যুক্ত হওয়া বাধ্যতামূলক!");
           btn.disabled = false;
           btn.innerHTML = originalText;
           return;
         }
 
-        if (!isMember1) {
+        if (!isM1) {
           showToast("আপনি এখনও ১ম অফিশিয়াল চ্যানেলে যুক্ত হননি!");
           btn.disabled = false;
           btn.innerHTML = originalText;
           return;
         }
 
-        if (!isMember2) {
-          showToast("আপনি এখনও ২য় সাপোর্ট গ্রুপে যুক্ত হননি!");
+        if (!isM2) {
+          showToast("আপনি এখনও ২য় অফিশিয়াল চ্যানেলে যুক্ত হননি!");
           btn.disabled = false;
           btn.innerHTML = originalText;
           return;
