@@ -8,7 +8,6 @@
   <!-- Telegram WebApp Pre-Init Hook & Error Suppressor -->
   <script>
     (function() {
-      // 1. Filter out the Telegram CloudStorage unsupported version message in console
       var _origError = console.error;
       console.error = function() {
         if (arguments.length > 0 && typeof arguments[0] === 'string' && arguments[0].indexOf('CloudStorage is not supported in version') !== -1) {
@@ -17,7 +16,6 @@
         _origError.apply(console, arguments);
       };
 
-      // 2. Set Telegram WebApp version to 8.0 before telegram-web-app.js initializes
       try {
         var key = '__telegram__initParams';
         var p = {};
@@ -196,7 +194,7 @@
 
     /* Hero balance */
     .hero-balance-card { background: linear-gradient(135deg, var(--primary) 0%, #047857 100%); border-radius: var(--radius-lg); padding: 22px 20px; color: #ffffff; position: relative; overflow: hidden; box-shadow: var(--shadow-lg); margin-bottom: 16px; }
-    .hero-balance-card .wallet-watermark { position: absolute; right: 18px; top: 18px; opacity: 0.25; }
+    .hero-balance-card .wallet-watermark { position: absolute; right: 18px; top: 16px; font-size: 46px; line-height: 1; user-select: none; }
     .hero-balance-card .card-label { font-size: 0.88rem; font-weight: 600; color: rgba(255, 255, 255, 0.9); margin-bottom: 6px; }
     .hero-balance-card .main-balance { font-size: 2.6rem; font-weight: 900; line-height: 1.1; margin-bottom: 6px; }
     .hero-balance-card .usd-sub { font-size: 0.85rem; background: rgba(6, 78, 59, 0.5); display: inline-block; padding: 4px 12px; border-radius: var(--radius-full); font-weight: 700; margin-bottom: 20px; }
@@ -312,8 +310,8 @@
     <span id="toastText">নোটিফিকেশন</span>
   </div>
 
-  <!-- CHANNEL JOIN GATE & REGISTRATION -->
-  <section id="joinGateModal" style="display: none;">
+  <!-- CHANNEL JOIN GATE & REGISTRATION (শুরুতেই ২ নাম্বার পেজ দৃশ্যমান থাকবে) -->
+  <section id="joinGateModal" style="display: flex;">
     <div style="text-align: center; max-width: 380px; width: 100%;">
       <div class="gate-parrot-badge">🦜</div>
       <h2 style="font-size: 1.5rem; margin-bottom: 6px;"><span class="dynamic-app-name">TIA পাখি</span> — তে স্বাগতম</h2>
@@ -346,9 +344,9 @@
   </section>
 
   <!-- TOP STICKY HEADER -->
-  <header class="top-header">
+  <header class="top-header" id="appTopHeader" style="display: none;">
     <div class="profile-meta-wrap">
-      <img id="userHeaderAvatar" src="https://via.placeholder.com/80?text=TIA" alt="Avatar" class="header-avatar">
+      <img id="userHeaderAvatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><rect width='80' height='80' fill='%23ecfdf5'/><text x='50%' y='55%' font-size='38' text-anchor='middle' dominant-baseline='middle'>🦜</text></svg>" alt="Avatar" class="header-avatar" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 80 80\'><rect width=\'80\' height=\'80\' fill=\'%23ecfdf5\'/><text x=\'50%\' y=\'55%\' font-size=\'38\' text-anchor=\'middle\' dominant-baseline=\'middle\'>🦜</text></svg>'">
       <div class="profile-titles">
         <span class="profile-username" id="userHeaderUsername">ব্যবহারকারী</span>
         <div class="balance-pill-badge">
@@ -364,12 +362,13 @@
   </header>
 
   <!-- SPA VIEWS CONTAINER -->
-  <main class="app-viewport">
+  <main class="app-viewport" id="appMainViewport" style="display: none;">
 
     <!-- 1. HOME VIEW (index.html) -->
     <div id="view-home" class="page-view active">
       <div class="hero-balance-card">
-        <svg class="wallet-watermark" width="56" height="56" viewBox="0 0 24 24" fill="#ffffff"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20"/><circle cx="16" cy="15" r="1.5"/></svg>
+        <!-- টিয়া পাখির ইমোজি বসানো হয়েছে -->
+        <span class="wallet-watermark">🦜</span>
         <div class="card-label">আপনার মোট আয়</div>
         <div class="main-balance">৳ <span id="homeMainBalance">0.00</span></div>
         <div class="usd-sub">USD (<span id="homeMainUsd">$0.00</span>)</div>
@@ -580,7 +579,7 @@
     <!-- 5. PROFILE VIEW (profile.html) -->
     <div id="view-profile" class="page-view">
       <div class="card user-card">
-        <img id="userProfileAvatar" src="https://via.placeholder.com/80" alt="Avatar" class="user-avatar-main">
+        <img id="userProfileAvatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><rect width='80' height='80' fill='%23ecfdf5'/><text x='50%' y='55%' font-size='38' text-anchor='middle' dominant-baseline='middle'>🦜</text></svg>" alt="Avatar" class="user-avatar-main" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 80 80\'><rect width=\'80\' height=\'80\' fill=\'%23ecfdf5\'/><text x=\'50%\' y=\'55%\' font-size=\'38\' text-anchor=\'middle\' dominant-baseline=\'middle\'>🦜</text></svg>'">
         <h3 id="userProfileName">ব্যবহারকারী</h3>
         <p id="userProfileHandle" style="font-size: 0.88rem; color: var(--primary); font-weight: 800; margin-bottom: 10px;">@username</p>
         <span style="font-size: 0.75rem; background: var(--primary-tint); color: var(--primary-deep); border: 1px solid var(--primary-border); padding: 5px 14px; border-radius: var(--radius-full); font-weight: 800;">
@@ -679,6 +678,32 @@
 
   </main>
 
+  <!-- FIXED BOTTOM NAVIGATION BAR -->
+  <nav class="bottom-nav-container" id="appBottomNav" style="display: none;">
+    <button onclick="switchView('home')" class="nav-btn active" id="tab-home">
+      <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>হোম</span>
+    </button>
+    <button onclick="switchView('ads')" class="nav-btn" id="tab-ads">
+      <svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="m11 8 5 4-5 4V8z"/></svg>
+      <span>অ্যাড</span>
+    </button>
+    <div onclick="switchView('tasks')" class="center-action-btn-wrap" id="tab-tasks">
+      <div class="center-circle-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>
+      </div>
+      <span class="center-label">কাজ</span>
+    </div>
+    <button onclick="switchView('wallet')" class="nav-btn" id="tab-wallet">
+      <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+      <span>ওয়ালেট</span>
+    </button>
+    <button onclick="switchView('profile')" class="nav-btn" id="tab-profile">
+      <svg viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>প্রোফাইল</span>
+    </button>
+  </nav>
+
   <!-- RULES MODAL -->
   <div class="modal-overlay" id="rulesModal">
     <div class="modal-sheet">
@@ -730,38 +755,11 @@
     </div>
   </div>
 
-  <!-- FIXED BOTTOM NAVIGATION BAR -->
-  <nav class="bottom-nav-container">
-    <button onclick="switchView('home')" class="nav-btn active" id="tab-home">
-      <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      <span>হোম</span>
-    </button>
-    <button onclick="switchView('ads')" class="nav-btn" id="tab-ads">
-      <svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="m11 8 5 4-5 4V8z"/></svg>
-      <span>অ্যাড</span>
-    </button>
-    <div onclick="switchView('tasks')" class="center-action-btn-wrap" id="tab-tasks">
-      <div class="center-circle-btn">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>
-      </div>
-      <span class="center-label">কাজ</span>
-    </div>
-    <button onclick="switchView('wallet')" class="nav-btn" id="tab-wallet">
-      <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
-      <span>ওয়ালেট</span>
-    </button>
-    <button onclick="switchView('profile')" class="nav-btn" id="tab-profile">
-      <svg viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      <span>প্রোফাইল</span>
-    </button>
-  </nav>
-
   <!-- JAVASCRIPT LOGIC CORE -->
   <script>
     const IMGBB_API_KEY = "728b67da57cb2b9c5a563d5fa4ba6d10";
-    let BOT_USERNAME = "TiaPakhiEarn_Bot"; // ডায়নামিক: এডমিন প্যানেল থেকে অটো আপডেট হবে
+    let BOT_USERNAME = "TiaPakhiEarn_Bot";
 
-    // Telegram Bot Token ও চ্যানেল ভেরিয়েবল
     let BOT_TOKEN = "";
     let channel1ChatId = "";
     let channel2ChatId = "";
@@ -804,7 +802,6 @@
     };
     let adsgramController = null;
 
-    // ডায়নামিক টার্গেট কনফিগারেশন (এডমিন প্যানেলের সাথে সিঙ্কড)
     let TARGET_TIERS = [
       { id: "tier_3", count: 3, bonus: 30, colorBg: "#eff6ff", colorText: "#2563eb", title: "৩ টি রেফার", sub: "টার্গেট সম্পন্ন করুন", badge: "১" },
       { id: "tier_5", count: 5, bonus: 50, colorBg: "#fefce8", colorText: "#d97706", title: "৫ টি রেফার", sub: "টার্গেট সম্পন্ন করুন", badge: "২" },
@@ -812,16 +809,30 @@
       { id: "tier_20", count: 20, bonus: 250, colorBg: "#fdf2f8", colorText: "#db2777", title: "২০ টি রেফার", sub: "মেগা রিওয়ার্ড বোনাস", badge: "৪" }
     ];
 
-    // Tasks & Uploads
     let selectedTask = null;
     let selectedImageFile = null;
 
-    // Wallet State
     let selectedPayMethod = "bKash";
     let selectedAmount = 50;
     const withdrawalAmounts = [50, 100, 200, 500, 1000];
     let feePercent = 10;
     let MIN_REQUIRED_REFS = 20;
+
+    // দৃশ্যমান স্ক্রিন কন্ট্রোল (১ নাম্বার পেজের ফ্লাস ছাড়া চলা)
+    function showJoinGate() {
+      document.getElementById("joinGateModal").style.display = "flex";
+      document.getElementById("appTopHeader").style.display = "none";
+      document.getElementById("appMainViewport").style.display = "none";
+      document.getElementById("appBottomNav").style.display = "none";
+    }
+
+    function showMainApp() {
+      render(); // সম্পূর্ণ আসল ডাটা রেন্ডার নিশ্চিত করার পর ৩ নাম্বার পেজ প্রদর্শন
+      document.getElementById("joinGateModal").style.display = "none";
+      document.getElementById("appTopHeader").style.display = "flex";
+      document.getElementById("appMainViewport").style.display = "block";
+      document.getElementById("appBottomNav").style.display = "flex";
+    }
 
     // SPA ROUTER
     function switchView(viewName) {
@@ -851,21 +862,36 @@
       }
     }
 
-    // ON DOM LOAD
+    // ON DOM LOAD (দ্রুত প্যারালাল লোড)
     window.addEventListener("DOMContentLoaded", async () => {
       initPills();
       renderConfigUI();
       initAdsgram();
 
-      // ফায়ারবেস থেকে লাইভ সেটিংস ও কনফিগ লোড
-      await fetchInitialSettings();
+      try {
+        const [genDoc, userDoc] = await Promise.all([
+          db ? db.collection("settings").doc("general").get().catch(() => null) : null,
+          db ? db.collection("users").doc(userId).get().catch(() => null) : null
+        ]);
+
+        if (genDoc && genDoc.exists) {
+          applyGeneralSettingsData(genDoc.data());
+        }
+
+        if (userDoc) {
+          await processUserInit(userDoc);
+        } else {
+          showJoinGate();
+        }
+      } catch (e) {
+        showJoinGate();
+      }
+
       listenGeneralSettings();
       listenAdSettings();
-      await checkAndInitUser();
-
+      listenUserRealtime();
       updateReferralLink();
 
-      // Tab / Window focus changes (টেলিগ্রাম চ্যানেলে জয়েন করে ফিরে আসলে চেক)
       document.addEventListener("visibilitychange", async () => {
         if (document.visibilityState === "visible") {
           const isGateVisible = document.getElementById("joinGateModal")?.style.display !== "none";
@@ -876,7 +902,7 @@
             if (!allJoined) {
               if (db) db.collection("users").doc(userId).update({ membershipVerified: false }).catch(() => {});
               currentUser.membershipVerified = false;
-              document.getElementById("joinGateModal").style.display = "flex";
+              showJoinGate();
               showToast("আপনি চ্যানেল থেকে বের হয়ে গেছেন! পুনরায় যুক্ত হওয়া বাধ্যতামূলক।");
             }
           }
@@ -889,24 +915,9 @@
       if (refInput) refInput.value = `https://t.me/${BOT_USERNAME}?start=ref_${userId}`;
     }
 
-    // FETCH INITIAL SETTINGS ONCE
-    async function fetchInitialSettings() {
-      if (!db) return;
-      try {
-        const doc = await db.collection("settings").doc("general").get();
-        if (doc.exists) {
-          applyGeneralSettingsData(doc.data());
-        }
-      } catch(e) {
-        console.error("Settings load error:", e);
-      }
-    }
-
-    // এডমিন প্যানেলের পরিবর্তনগুলো ইউজার প্যানেলে সরাসরি লাইভ প্রয়োগ করার ফাংশন
     function applyGeneralSettingsData(g) {
       if (!g) return;
 
-      // ১. বট ইউজারনেম আপডেট
       if (g.botUsername) {
         BOT_USERNAME = String(g.botUsername).trim().replace('@', '');
         updateReferralLink();
@@ -927,7 +938,6 @@
       const refReqTitle = document.getElementById("refRequirementTitle");
       if (refReqTitle) refReqTitle.innerText = `উইথড্র শর্ত (${MIN_REQUIRED_REFS}টি রেফার)`;
 
-      // ২. অ্যাপের কালার ও থিম পরিবর্তন (এডমিন থেকে লাইভ সিঙ্ক)
       if (g.primaryColor) {
         document.documentElement.style.setProperty('--primary', g.primaryColor);
         document.documentElement.style.setProperty('--primary-light', g.primaryColor);
@@ -942,7 +952,6 @@
         document.querySelectorAll(".dynamic-app-name").forEach(el => el.innerText = g.appName);
       }
 
-      // ৩. রেফার টার্গেট রিওয়ার্ডস লাইভ সিঙ্ক (এডমিন থেকে পরিবর্তন সরাসরি কাজ করবে)
       if (g.targetTiers) {
         TARGET_TIERS = [
           {
@@ -983,20 +992,16 @@
 
       calc();
       updateReferralCard();
-      render();
+      if (currentUser) render();
     }
 
-    // GENERAL SETTINGS LISTENER
     function listenGeneralSettings() {
       if (!db) return;
       db.collection("settings").doc("general").onSnapshot(doc => {
-        if (doc.exists) {
-          applyGeneralSettingsData(doc.data());
-        }
+        if (doc.exists) applyGeneralSettingsData(doc.data());
       });
     }
 
-    // AD SETTINGS LISTENER
     function listenAdSettings() {
       if (!db) return;
       db.collection("settings").doc("ads").onSnapshot(doc => {
@@ -1042,7 +1047,6 @@
       document.getElementById("totalDailyLimit").innerText = totalTarget;
     }
 
-    // TELEGRAM BOT API MEMBERSHIP VERIFICATION
     function getChatTarget(customId, url) {
       if (customId && String(customId).trim()) return String(customId).trim();
       if (!url) return null;
@@ -1112,14 +1116,9 @@
       return { isMember1, isMember2, allJoined: isMember1 && isMember2 };
     }
 
-    // USER INIT & GATE SYSTEM
-    async function checkAndInitUser() {
-      if (!db) return;
-      const ref = db.collection("users").doc(userId);
-      const doc = await ref.get();
-      
-      if (!doc.exists) {
-        document.getElementById("joinGateModal").style.display = "flex";
+    async function processUserInit(doc) {
+      if (!doc || !doc.exists) {
+        showJoinGate();
         await verifyUserMembership(true);
       } else {
         currentUser = doc.data();
@@ -1130,20 +1129,22 @@
 
         const { allJoined } = await verifyUserMembership(true);
         if (!allJoined) {
-          await ref.update({ membershipVerified: false }).catch(() => {});
+          await db.collection("users").doc(userId).update({ membershipVerified: false }).catch(() => {});
           currentUser.membershipVerified = false;
-          document.getElementById("joinGateModal").style.display = "flex";
+          showJoinGate();
         } else {
           if (!currentUser.membershipVerified) {
-            await ref.update({ membershipVerified: true }).catch(() => {});
+            await db.collection("users").doc(userId).update({ membershipVerified: true }).catch(() => {});
             currentUser.membershipVerified = true;
           }
-          document.getElementById("joinGateModal").style.display = "none";
-          render();
+          showMainApp();
         }
       }
+    }
 
-      ref.onSnapshot(s => {
+    function listenUserRealtime() {
+      if (!db) return;
+      db.collection("users").doc(userId).onSnapshot(s => {
         if (s.exists) { 
           currentUser = s.data();
           if (currentUser.isBanned) {
@@ -1151,7 +1152,6 @@
             return;
           }
           if (currentUser.membershipVerified) {
-            document.getElementById("joinGateModal").style.display = "none";
             render(); 
           }
         }
@@ -1217,7 +1217,7 @@
               firstName: tgUser?.first_name || "User",
               lastName: tgUser?.last_name || "",
               username: tgUser?.username || "tiapakhi_user",
-              profilePhotoUrl: tgUser?.photo_url || "https://via.placeholder.com/80?text=TIA",
+              profilePhotoUrl: tgUser?.photo_url || "",
               balance: 0.00,
               totalEarned: 0.00,
               totalReferrals: 0,
@@ -1239,8 +1239,7 @@
           }
         }
 
-        document.getElementById("joinGateModal").style.display = "none";
-        render();
+        showMainApp();
         showToast("সফলভাবে একাউন্ট ভেরিফাই ও প্রবেশ সম্পন্ন হয়েছে! 🎉");
       } catch (err) {
         showToast("যাচাই করতে সমস্যা হয়েছে! আবার চেষ্টা করুন।");
@@ -1250,7 +1249,6 @@
       }
     }
 
-    // CENTRAL RENDER FUNCTION
     function render() {
       if (!currentUser) return;
       const bal = Number(currentUser.balance || 0).toFixed(2);
@@ -1293,11 +1291,9 @@
         document.getElementById("userProfileAvatar").src = currentUser.profilePhotoUrl;
       }
 
-      // Wallet
       updateReferralCard();
     }
 
-    // HOME REFERRAL TARGET CARDS (ডায়নামিকালি রেন্ডার হয়)
     function renderTargetCards() {
       const container = document.getElementById("targetCardsContainer");
       if (!container) return;
@@ -1369,7 +1365,6 @@
       }
     }
 
-    // AD NETWORKS REWARDS PROCESS
     async function processReward(adType, specificCounterField) {
       const config = APP_CONFIG[adType];
       const pool = Number(config.totalRevenuePool || 0);
@@ -1465,7 +1460,6 @@
       finally { btn.disabled = false; btn.innerText = "Adsgram অ্যাড দেখুন"; }
     }
 
-    // TASKS SYSTEM
     async function loadTasks() {
       const container = document.getElementById("taskListContainer");
       if (!db || !container) return;
